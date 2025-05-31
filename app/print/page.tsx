@@ -32,25 +32,56 @@ export default function PrintPage() {
     return null;
   }
 
+  // カードを3列に配置するための配列を作成
+  const cardRows: Card[][] = [];
+  let currentRow: Card[] = [];
+  let cardCount = 0;
+
+  cards.forEach((card) => {
+    for (let i = 0; i < card.value; i++) {
+      currentRow.push(card);
+      cardCount++;
+      if (cardCount % 3 === 0) {
+        cardRows.push([...currentRow]);
+        currentRow = [];
+      }
+    }
+  });
+
+  if (currentRow.length > 0) {
+    cardRows.push(currentRow);
+  }
+
   return (
     <div className="p-4">
-      <div className="grid grid-cols-3 gap-4">
-        {cards.map((card, index) => (
-          <div key={index} className="relative">
-            {Array.from({ length: card.value }).map((_, i) => (
-              <Image
-                width={100}
-                height={100}
-                key={i}
-                src={card.url}
-                alt={`Card ${index + 1}`}
-                className="w-full h-auto"
-                priority
-              />
-            ))}
-          </div>
-        ))}
-      </div>
+      <table className="w-full border-collapse">
+        <tbody>
+          {cardRows.map((row, rowIndex) => (
+            <tr key={rowIndex}>
+              {row.map((card, colIndex) => (
+                <td key={`${rowIndex}-${colIndex}`} className="w-[230px] p-2">
+                  <div className="relative">
+                    <Image
+                      src={card.url}
+                      alt={`Card ${rowIndex * 3 + colIndex + 1}`}
+                      width={230}
+                      height={320}
+                      className="w-full h-auto"
+                      priority
+                    />
+                    <input
+                      type="text"
+                      value={card.url}
+                      className="absolute left-2 -top-8 opacity-0 hover:opacity-100 transition-opacity"
+                      readOnly
+                    />
+                  </div>
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
