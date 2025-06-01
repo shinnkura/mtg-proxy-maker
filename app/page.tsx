@@ -499,7 +499,7 @@ export default function HomePage() {
                   0
                 }
               >
-                UI管理からプリントページへ移動
+                プリントページへ
               </Button>
               {imageItems.filter((item) => item.url.trim() !== "").length ===
                 0 && (
