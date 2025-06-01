@@ -183,7 +183,17 @@ export default function HomePage() {
       return;
     }
 
+    /* ① クリック直後に空ウィンドウを確保 */
+    const pdfWindow = window.open("", "_blank");
+    if (!pdfWindow) {
+      alert(
+        "ポップアップがブロックされています。Safariの設定で許可してください。"
+      );
+      return;
+    }
+
     try {
+      /* ② ここから先は非同期で画像読込 & PDF 生成 */
       // プリントページと同じロジックでカードを展開
       const expandedCards: string[] = [];
       printData.forEach((card) => {
@@ -322,13 +332,20 @@ export default function HomePage() {
         currentPageRowCount++;
       }
 
-      // PDFを新しいタブで開く
+      /* ③ 完成後に空ウィンドウへ PDF を流し込む */
       const pdfBlob = pdf.output("blob");
       const pdfUrl = URL.createObjectURL(pdfBlob);
-      window.open(pdfUrl, "_blank");
+
+      // 空ウィンドウにPDFを流し込む
+      pdfWindow.location.href = pdfUrl;
     } catch (error) {
       console.error("PDF generation error:", error);
       alert("PDFの生成に失敗しました");
+
+      // エラーが発生した場合は空ウィンドウを閉じる
+      if (pdfWindow && !pdfWindow.closed) {
+        pdfWindow.close();
+      }
     }
   };
 
