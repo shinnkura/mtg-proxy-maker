@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,7 +15,6 @@ interface ImageItem {
 }
 
 export default function HomePage() {
-  const router = useRouter();
   const [imageDataText, setImageDataText] = useState(`[
   { "url": "https://files.hareruyamtg.com/img/goods/L/287.jpg", "value": 3 },
   { "url": "https://files.hareruyamtg.com/img/goods/L/MM3/ja/grafdigger's_cage.jpg", "value": 3 },
@@ -61,19 +59,6 @@ export default function HomePage() {
     setModalImage(null);
   };
 
-  const handlePrint = () => {
-    try {
-      // JSONの妥当性をチェック
-      // const parsedData = JSON.parse(imageDataText);
-
-      // データをURLパラメータとして渡す
-      const encodedData = encodeURIComponent(imageDataText);
-      router.push(`/print?data=${encodedData}`);
-    } catch {
-      alert("JSONの形式が正しくありません。正しい形式で入力してください。");
-    }
-  };
-
   const addNewCard = () => {
     const newId = Date.now().toString();
     setImageItems((prev) => [
@@ -102,18 +87,6 @@ export default function HomePage() {
         item.id === id ? { ...item, value: Math.max(1, value) } : item
       )
     );
-  };
-
-  const handlePrintFromUI = () => {
-    const printData = imageItems
-      .filter((item) => item.url.trim() !== "")
-      .map((item) => ({
-        url: item.url,
-        value: item.value,
-      }));
-
-    const encodedData = encodeURIComponent(JSON.stringify(printData));
-    router.push(`/print?data=${encodedData}`);
   };
 
   const handleHareruyaUrlLoad = async () => {
@@ -411,8 +384,34 @@ export default function HomePage() {
               </pre>
             </div>
 
-            <Button onClick={handlePrint} className="w-full" size="lg">
-              プリントページへ移動
+            <Button
+              onClick={() => {
+                try {
+                  // JSONの妥当性をチェック
+                  JSON.parse(imageDataText);
+
+                  // データから直接PDF生成
+                  const printData = JSON.parse(imageDataText);
+                  const newImageItems: ImageItem[] = printData.map(
+                    (card: { url: string; value: number }, index: number) => ({
+                      id: `json-${Date.now()}-${index}`,
+                      url: card.url,
+                      value: card.value,
+                    })
+                  );
+                  setImageItems(newImageItems);
+                  handleGeneratePDF();
+                } catch {
+                  alert(
+                    "JSONの形式が正しくありません。正しい形式で入力してください。"
+                  );
+                }
+              }}
+              className="w-full"
+              size="lg"
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              PDFで表示
             </Button>
           </CardContent>
         </Card>
@@ -651,33 +650,20 @@ export default function HomePage() {
               </Button>
             </div>
 
-            {/* UI管理からのプリントボタン */}
+            {/* UI管理からのPDFボタン */}
             <div className="text-center mt-6 pt-6 border-t space-y-4">
-              <div className="flex gap-4 justify-center flex-wrap">
-                <Button
-                  onClick={handlePrintFromUI}
-                  size="lg"
-                  className="px-8 py-3"
-                  disabled={
-                    imageItems.filter((item) => item.url.trim() !== "")
-                      .length === 0
-                  }
-                >
-                  プリントページへ
-                </Button>
-                <Button
-                  onClick={handleGeneratePDF}
-                  size="lg"
-                  className="px-8 py-3"
-                  disabled={
-                    imageItems.filter((item) => item.url.trim() !== "")
-                      .length === 0
-                  }
-                >
-                  <FileText className="w-4 h-4 mr-2" />
-                  PDFで表示
-                </Button>
-              </div>
+              <Button
+                onClick={handleGeneratePDF}
+                size="lg"
+                className="px-8 py-3"
+                disabled={
+                  imageItems.filter((item) => item.url.trim() !== "").length ===
+                  0
+                }
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                PDFで表示
+              </Button>
               {imageItems.filter((item) => item.url.trim() !== "").length ===
                 0 && (
                 <p className="text-sm text-gray-500 mt-2">
