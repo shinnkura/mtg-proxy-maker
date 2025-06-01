@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Trash2, Plus, Eye, Loader2 } from "lucide-react";
+import { Trash2, Plus, Eye, Loader2, FileText } from "lucide-react";
+import jsPDF from "jspdf";
 
 interface ImageItem {
   id: string;
@@ -193,6 +194,168 @@ export default function HomePage() {
     } finally {
       setIsLoading(false);
       setLoadingMessage("");
+    }
+  };
+
+  const handleGeneratePDF = async () => {
+    const printData = imageItems
+      .filter((item) => item.url.trim() !== "")
+      .map((item) => ({
+        url: item.url,
+        value: item.value,
+      }));
+
+    if (printData.length === 0) {
+      alert("PDFに出力するカードがありません");
+      return;
+    }
+
+    try {
+      // プリントページと同じロジックでカードを展開
+      const expandedCards: string[] = [];
+      printData.forEach((card) => {
+        for (let i = 0; i < card.value; i++) {
+          expandedCards.push(card.url);
+        }
+      });
+
+      // カードを3列に配置するための配列を作成（プリントページと同じロジック）
+      const cardRows: string[][] = [];
+      let currentRow: string[] = [];
+      let cardCount = 0;
+
+      expandedCards.forEach((cardUrl) => {
+        currentRow.push(cardUrl);
+        cardCount++;
+        if (cardCount % 3 === 0) {
+          cardRows.push([...currentRow]);
+          currentRow = [];
+        }
+      });
+
+      if (currentRow.length > 0) {
+        cardRows.push(currentRow);
+      }
+
+      // PDF設定 - A4サイズ
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+
+      // カードサイズ設定 - 正確に63mm x 88mm
+      const cardWidth = 63; // mm
+      const cardHeight = 88; // mm
+
+      // A4サイズ（210mm幅）で3列に配置する際の正確な計算
+      const a4Width = 210; // mm
+      const a4Height = 297; // mm
+      const totalCardWidth = 3 * cardWidth; // 189mm
+      const remainingWidth = a4Width - totalCardWidth; // 21mm
+
+      const marginX = 5; // mm (左右余白を小さく)
+      const spacingX = (remainingWidth - 2 * marginX) / 2; // カード間のスペース = 5.5mm
+
+      // 高さの計算 - A4に収まるように調整
+      const totalCardHeight = 3 * cardHeight; // 264mm (3行)
+      const remainingHeight = a4Height - totalCardHeight; // 33mm
+      const marginY = 10; // mm (上下余白)
+      const spacingY = (remainingHeight - 2 * marginY) / 2; // 行間スペース = 6.5mm
+
+      let currentPageRowCount = 0;
+      const maxRowsPerPage = 3; // A4に3行まで
+
+      // 画像をロードしてBase64に変換する関数
+      const loadImageAsBase64 = (url: string): Promise<string> => {
+        return new Promise((resolve, reject) => {
+          const img = new Image();
+
+          img.onload = () => {
+            try {
+              const canvas = document.createElement("canvas");
+              // 63mm x 88mmの比率を保持して高解像度化
+              const dpi = 300; // 高品質印刷用DPI
+              canvas.width = Math.round((cardWidth / 25.4) * dpi); // mmをpxに変換
+              canvas.height = Math.round((cardHeight / 25.4) * dpi);
+              const ctx = canvas.getContext("2d");
+
+              if (ctx) {
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                const dataURL = canvas.toDataURL("image/JPEG", 0.95);
+                resolve(dataURL);
+              } else {
+                reject(new Error("Canvas context not available"));
+              }
+            } catch (error) {
+              reject(error);
+            }
+          };
+
+          img.onerror = () => {
+            reject(new Error(`Failed to load image: ${url}`));
+          };
+
+          // プロキシAPIを使用して画像を取得
+          const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(url)}`;
+          img.src = proxyUrl;
+        });
+      };
+
+      for (let rowIndex = 0; rowIndex < cardRows.length; rowIndex++) {
+        const row = cardRows[rowIndex];
+
+        // ページ送りの判定
+        if (currentPageRowCount >= maxRowsPerPage) {
+          pdf.addPage();
+          currentPageRowCount = 0;
+        }
+
+        // 行のY座標を計算
+        const rowY = marginY + currentPageRowCount * (cardHeight + spacingY);
+
+        // 各カードを配置
+        for (let colIndex = 0; colIndex < row.length; colIndex++) {
+          const cardUrl = row[colIndex];
+          const colX = marginX + colIndex * (cardWidth + spacingX);
+
+          try {
+            const base64Image = await loadImageAsBase64(cardUrl);
+            pdf.addImage(
+              base64Image,
+              "JPEG",
+              colX,
+              rowY,
+              cardWidth,
+              cardHeight
+            );
+          } catch (error) {
+            console.error(`Error loading image: ${cardUrl}`, error);
+
+            // エラーの場合、プレースホルダーを表示
+            pdf.setFillColor(240, 240, 240);
+            pdf.rect(colX, rowY, cardWidth, cardHeight, "F");
+            pdf.setTextColor(128, 128, 128);
+            pdf.setFontSize(8);
+            pdf.text(
+              "画像読み込み失敗",
+              colX + cardWidth / 2,
+              rowY + cardHeight / 2,
+              { align: "center" }
+            );
+          }
+        }
+
+        currentPageRowCount++;
+      }
+
+      // PDFを新しいタブで開く
+      const pdfBlob = pdf.output("blob");
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      window.open(pdfUrl, "_blank");
+    } catch (error) {
+      console.error("PDF generation error:", error);
+      alert("PDFの生成に失敗しました");
     }
   };
 
@@ -489,18 +652,32 @@ export default function HomePage() {
             </div>
 
             {/* UI管理からのプリントボタン */}
-            <div className="text-center mt-6 pt-6 border-t">
-              <Button
-                onClick={handlePrintFromUI}
-                size="lg"
-                className="px-8 py-3"
-                disabled={
-                  imageItems.filter((item) => item.url.trim() !== "").length ===
-                  0
-                }
-              >
-                プリントページへ
-              </Button>
+            <div className="text-center mt-6 pt-6 border-t space-y-4">
+              <div className="flex gap-4 justify-center flex-wrap">
+                <Button
+                  onClick={handlePrintFromUI}
+                  size="lg"
+                  className="px-8 py-3"
+                  disabled={
+                    imageItems.filter((item) => item.url.trim() !== "")
+                      .length === 0
+                  }
+                >
+                  プリントページへ
+                </Button>
+                <Button
+                  onClick={handleGeneratePDF}
+                  size="lg"
+                  className="px-8 py-3"
+                  disabled={
+                    imageItems.filter((item) => item.url.trim() !== "")
+                      .length === 0
+                  }
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  PDFで表示
+                </Button>
+              </div>
               {imageItems.filter((item) => item.url.trim() !== "").length ===
                 0 && (
                 <p className="text-sm text-gray-500 mt-2">
