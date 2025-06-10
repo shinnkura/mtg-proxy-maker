@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,12 @@ interface ImageItem {
   value: number;
 }
 
-function HomePageContent() {
+// PDF生成用のウィンドウ型定義
+interface PDFWindow extends Window {
+  updateProgress?: (current: number, total: number, message: string) => void;
+}
+
+export default function HomePage() {
   const [imageDataText, setImageDataText] = useState(`[
   { "url": "https://files.hareruyamtg.com/img/goods/L/287.jpg", "value": 3 },
   { "url": "https://files.hareruyamtg.com/img/goods/L/MM3/ja/grafdigger's_cage.jpg", "value": 3 },
@@ -189,7 +194,7 @@ function HomePageContent() {
     }
 
     /* ① クリック直後に空ウィンドウを確保 */
-    const pdfWindow = window.open("", "_blank");
+    const pdfWindow = window.open("", "_blank") as PDFWindow | null;
     if (!pdfWindow) {
       alert(
         "ポップアップがブロックされています。ブラウザの設定でポップアップを許可してください。"
@@ -929,18 +934,5 @@ function HomePageContent() {
         </div>
       )}
     </div>
-  );
-}
-
-export default function HomePage() {
-  return (
-    <Suspense fallback={<div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <div className="text-center">
-        <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-        <p>読み込み中...</p>
-      </div>
-    </div>}>
-      <HomePageContent />
-    </Suspense>
   );
 }
