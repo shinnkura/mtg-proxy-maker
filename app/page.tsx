@@ -584,70 +584,12 @@ export default function HomePage() {
             <CardTitle>データ入力</CardTitle>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="json" className="w-full">
+            <Tabs defaultValue="hareruya" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="json">JSONデータ入力</TabsTrigger>
                 <TabsTrigger value="hareruya">HARERUYA URL読み込み</TabsTrigger>
+                <TabsTrigger value="json">JSONデータ入力</TabsTrigger>
               </TabsList>
               
-              <TabsContent value="json" className="space-y-4">
-                <div>
-                  <label
-                    htmlFor="imageData"
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                  >
-                    画像データ（JSON形式）
-                  </label>
-                  <textarea
-                    id="imageData"
-                    value={imageDataText}
-                    onChange={(e) => setImageDataText(e.target.value)}
-                    className="w-full h-48 md:h-64 p-3 border border-gray-300 rounded-md font-mono text-sm"
-                    placeholder="画像データをJSON形式で入力してください"
-                  />
-                </div>
-
-                <div className="text-sm text-gray-600">
-                  <p className="font-medium mb-2">入力形式例:</p>
-                  <pre className="bg-gray-50 p-2 rounded text-xs overflow-x-auto">
-                    {`[
-  { "url": "画像URL", "value": 表示回数 },
-  { "url": "画像URL", "value": 表示回数 }
-]`}
-                  </pre>
-                </div>
-
-                <Button
-                  onClick={() => {
-                    try {
-                      // JSONの妥当性をチェック
-                      JSON.parse(imageDataText);
-
-                      // データから直接PDF生成
-                      const printData = JSON.parse(imageDataText);
-                      const newImageItems: ImageItem[] = printData.map(
-                        (card: { url: string; value: number }, index: number) => ({
-                          id: `json-${Date.now()}-${index}`,
-                          url: card.url,
-                          value: card.value,
-                        })
-                      );
-                      setImageItems(newImageItems);
-                      handleGeneratePDF();
-                    } catch {
-                      alert(
-                        "JSONの形式が正しくありません。正しい形式で入力してください。"
-                      );
-                    }
-                  }}
-                  className="w-full"
-                  size="lg"
-                >
-                  <FileText className="w-4 h-4 mr-2" />
-                  PDFで表示
-                </Button>
-              </TabsContent>
-
               <TabsContent value="hareruya" className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -756,6 +698,64 @@ export default function HomePage() {
                   ) : (
                     "URLから読み込み"
                   )}
+                </Button>
+              </TabsContent>
+              
+              <TabsContent value="json" className="space-y-4">
+                <div>
+                  <label
+                    htmlFor="imageData"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    画像データ（JSON形式）
+                  </label>
+                  <textarea
+                    id="imageData"
+                    value={imageDataText}
+                    onChange={(e) => setImageDataText(e.target.value)}
+                    className="w-full h-48 md:h-64 p-3 border border-gray-300 rounded-md font-mono text-sm"
+                    placeholder="画像データをJSON形式で入力してください"
+                  />
+                </div>
+
+                <div className="text-sm text-gray-600">
+                  <p className="font-medium mb-2">入力形式例:</p>
+                  <pre className="bg-gray-50 p-2 rounded text-xs overflow-x-auto">
+                    {`[
+  { "url": "画像URL", "value": 表示回数 },
+  { "url": "画像URL", "value": 表示回数 }
+]`}
+                  </pre>
+                </div>
+
+                <Button
+                  onClick={() => {
+                    try {
+                      // JSONの妥当性をチェック
+                      JSON.parse(imageDataText);
+
+                      // データから直接PDF生成
+                      const printData = JSON.parse(imageDataText);
+                      const newImageItems: ImageItem[] = printData.map(
+                        (card: { url: string; value: number }, index: number) => ({
+                          id: `json-${Date.now()}-${index}`,
+                          url: card.url,
+                          value: card.value,
+                        })
+                      );
+                      setImageItems(newImageItems);
+                      handleGeneratePDF();
+                    } catch {
+                      alert(
+                        "JSONの形式が正しくありません。正しい形式で入力してください。"
+                      );
+                    }
+                  }}
+                  className="w-full"
+                  size="lg"
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  PDFで表示
                 </Button>
               </TabsContent>
             </Tabs>
