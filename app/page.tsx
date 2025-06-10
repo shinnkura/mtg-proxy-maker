@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Trash2, Plus, Eye, Loader2, FileText } from "lucide-react";
 import jsPDF from "jspdf";
 
@@ -14,7 +15,7 @@ interface ImageItem {
   value: number;
 }
 
-export default function HomePage() {
+function HomePageContent() {
   const [imageDataText, setImageDataText] = useState(`[
   { "url": "https://files.hareruyamtg.com/img/goods/L/287.jpg", "value": 3 },
   { "url": "https://files.hareruyamtg.com/img/goods/L/MM3/ja/grafdigger's_cage.jpg", "value": 3 },
@@ -171,12 +172,16 @@ export default function HomePage() {
   };
 
   const handleGeneratePDF = async () => {
+    console.log("PDF生成開始");
+    
     const printData = imageItems
       .filter((item) => item.url.trim() !== "")
       .map((item) => ({
         url: item.url,
         value: item.value,
       }));
+
+    console.log("印刷データ:", printData);
 
     if (printData.length === 0) {
       alert("PDFに出力するカードがありません");
@@ -187,13 +192,173 @@ export default function HomePage() {
     const pdfWindow = window.open("", "_blank");
     if (!pdfWindow) {
       alert(
-        "ポップアップがブロックされています。Safariの設定で許可してください。"
+        "ポップアップがブロックされています。ブラウザの設定でポップアップを許可してください。"
       );
       return;
     }
 
+    console.log("ウィンドウ作成成功");
+
+    // ② 新しいウィンドウにロード画面を表示
+    pdfWindow.document.write(`
+      <!DOCTYPE html>
+      <html lang="ja">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>PDF生成中...</title>
+        <style>
+          * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+          }
+          
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+          }
+          
+          .loading-container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 90%;
+          }
+          
+          .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+          }
+          
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+          
+          .card-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+            animation: bounce 2s infinite;
+          }
+          
+          @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+              transform: translateY(0);
+            }
+            40% {
+              transform: translateY(-10px);
+            }
+            60% {
+              transform: translateY(-5px);
+            }
+          }
+          
+          .loading-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 10px;
+          }
+          
+          .loading-message {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 30px;
+          }
+          
+          .progress-container {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 15px;
+          }
+          
+          .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            width: 0%;
+          }
+          
+          .progress-text {
+            font-size: 14px;
+            opacity: 0.8;
+          }
+          
+          .dots {
+            display: inline-block;
+          }
+          
+          .dots::after {
+            content: '';
+            animation: dots 1.5s infinite;
+          }
+          
+          @keyframes dots {
+            0%, 20% { content: ''; }
+            40% { content: '.'; }
+            60% { content: '..'; }
+            80%, 100% { content: '...'; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="loading-container">
+          <div class="card-icon">🃏</div>
+          <div class="spinner"></div>
+          <h1 class="loading-title">PDF生成中</h1>
+          <p class="loading-message">カード画像を処理しています<span class="dots"></span></p>
+          <div class="progress-container">
+            <div class="progress-bar" id="progressBar"></div>
+          </div>
+          <p class="progress-text" id="progressText">準備中...</p>
+        </div>
+        
+        <script>
+          // プログレス更新用の関数をグローバルに定義
+          window.updateProgress = function(current, total, message) {
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            const loadingMessage = document.querySelector('.loading-message');
+            
+            if (progressBar && progressText) {
+              const percentage = total > 0 ? (current / total) * 100 : 0;
+              progressBar.style.width = percentage + '%';
+              progressText.textContent = current + ' / ' + total + ' 完了';
+              
+              if (message) {
+                loadingMessage.innerHTML = message + '<span class="dots"></span>';
+              }
+            }
+          };
+        </script>
+      </body>
+      </html>
+    `);
+    pdfWindow.document.close();
+
+    console.log("ローディング画面表示完了");
+
     try {
-      /* ② ここから先は非同期で画像読込 & PDF 生成 */
+      /* ③ ここから先は非同期で画像読込 & PDF 生成 */
       // プリントページと同じロジックでカードを展開
       const expandedCards: string[] = [];
       printData.forEach((card) => {
@@ -201,6 +366,13 @@ export default function HomePage() {
           expandedCards.push(card.url);
         }
       });
+
+      console.log("展開されたカード数:", expandedCards.length);
+
+      // 初期プログレス表示
+      if (pdfWindow && !pdfWindow.closed && pdfWindow.updateProgress) {
+        pdfWindow.updateProgress(0, expandedCards.length, "画像の読み込みを開始しています");
+      }
 
       // カードを3列に配置するための配列を作成（プリントページと同じロジック）
       const cardRows: string[][] = [];
@@ -252,9 +424,11 @@ export default function HomePage() {
       // 画像をロードしてBase64に変換する関数
       const loadImageAsBase64 = (url: string): Promise<string> => {
         return new Promise((resolve, reject) => {
+          console.log("画像読み込み開始:", url);
           const img = new Image();
 
           img.onload = () => {
+            console.log("画像読み込み成功:", url);
             try {
               const canvas = document.createElement("canvas");
               // 63mm x 88mmの比率を保持して高解像度化
@@ -266,24 +440,37 @@ export default function HomePage() {
               if (ctx) {
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                 const dataURL = canvas.toDataURL("image/JPEG", 0.95);
+                console.log("Base64変換成功");
                 resolve(dataURL);
               } else {
+                console.error("Canvas context取得失敗");
                 reject(new Error("Canvas context not available"));
               }
             } catch (error) {
+              console.error("Canvas処理エラー:", error);
               reject(error);
             }
           };
 
           img.onerror = () => {
+            console.error("画像読み込み失敗:", url);
             reject(new Error(`Failed to load image: ${url}`));
           };
 
           // プロキシAPIを使用して画像を取得
           const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(url)}`;
+          console.log("プロキシURL:", proxyUrl);
           img.src = proxyUrl;
+          
+          // CORS設定を追加
+          img.crossOrigin = "anonymous";
         });
       };
+
+      let processedImages = 0;
+      const totalImages = expandedCards.length;
+
+      console.log("PDF生成開始 - 総画像数:", totalImages);
 
       for (let rowIndex = 0; rowIndex < cardRows.length; rowIndex++) {
         const row = cardRows[rowIndex];
@@ -302,6 +489,10 @@ export default function HomePage() {
           const cardUrl = row[colIndex];
           const colX = marginX + colIndex * (cardWidth + spacingX);
 
+          // プログレス更新
+          if (pdfWindow && !pdfWindow.closed && pdfWindow.updateProgress) {
+            pdfWindow.updateProgress(processedImages, totalImages, `画像を処理中 (${processedImages + 1}/${totalImages})`);
+          }
           try {
             const base64Image = await loadImageAsBase64(cardUrl);
             pdf.addImage(
@@ -312,6 +503,7 @@ export default function HomePage() {
               cardWidth,
               cardHeight
             );
+            console.log(`画像追加成功: ${processedImages + 1}/${totalImages}`);
           } catch (error) {
             console.error(`Error loading image: ${cardUrl}`, error);
 
@@ -327,20 +519,32 @@ export default function HomePage() {
               { align: "center" }
             );
           }
+          processedImages++;
         }
 
         currentPageRowCount++;
       }
 
-      /* ③ 完成後に空ウィンドウへ PDF を流し込む */
+      console.log("PDF生成完了");
+
+      // PDF生成完了のプログレス表示
+      if (pdfWindow && !pdfWindow.closed && pdfWindow.updateProgress) {
+        pdfWindow.updateProgress(totalImages, totalImages, "PDFを生成中...");
+      }
+
+      /* ④ 完成後に空ウィンドウへ PDF を流し込む */
       const pdfBlob = pdf.output("blob");
       const pdfUrl = URL.createObjectURL(pdfBlob);
 
+      console.log("PDF URL生成完了:", pdfUrl);
+
       // 空ウィンドウにPDFを流し込む
       pdfWindow.location.href = pdfUrl;
+      
+      console.log("PDF表示完了");
     } catch (error) {
       console.error("PDF generation error:", error);
-      alert("PDFの生成に失敗しました");
+      alert(`PDFの生成に失敗しました: ${error instanceof Error ? error.message : "不明なエラー"}`);
 
       // エラーが発生した場合は空ウィンドウを閉じる
       if (pdfWindow && !pdfWindow.closed) {
@@ -372,180 +576,184 @@ export default function HomePage() {
       <div className="max-w-4xl mx-auto">
         <Card>
           <CardHeader>
-            <CardTitle>画像データ入力</CardTitle>
+            <CardTitle>データ入力</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label
-                htmlFor="imageData"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                画像データ（JSON形式）
-              </label>
-              <textarea
-                id="imageData"
-                value={imageDataText}
-                onChange={(e) => setImageDataText(e.target.value)}
-                className="w-full h-48 md:h-64 p-3 border border-gray-300 rounded-md font-mono text-sm"
-                placeholder="画像データをJSON形式で入力してください"
-              />
-            </div>
+          <CardContent>
+            <Tabs defaultValue="json" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="json">JSONデータ入力</TabsTrigger>
+                <TabsTrigger value="hareruya">HARERUYA URL読み込み</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="json" className="space-y-4">
+                <div>
+                  <label
+                    htmlFor="imageData"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    画像データ（JSON形式）
+                  </label>
+                  <textarea
+                    id="imageData"
+                    value={imageDataText}
+                    onChange={(e) => setImageDataText(e.target.value)}
+                    className="w-full h-48 md:h-64 p-3 border border-gray-300 rounded-md font-mono text-sm"
+                    placeholder="画像データをJSON形式で入力してください"
+                  />
+                </div>
 
-            <div className="text-sm text-gray-600">
-              <p className="font-medium mb-2">入力形式例:</p>
-              <pre className="bg-gray-50 p-2 rounded text-xs overflow-x-auto">
-                {`[
+                <div className="text-sm text-gray-600">
+                  <p className="font-medium mb-2">入力形式例:</p>
+                  <pre className="bg-gray-50 p-2 rounded text-xs overflow-x-auto">
+                    {`[
   { "url": "画像URL", "value": 表示回数 },
   { "url": "画像URL", "value": 表示回数 }
 ]`}
-              </pre>
-            </div>
+                  </pre>
+                </div>
 
-            <Button
-              onClick={() => {
-                try {
-                  // JSONの妥当性をチェック
-                  JSON.parse(imageDataText);
+                <Button
+                  onClick={() => {
+                    try {
+                      // JSONの妥当性をチェック
+                      JSON.parse(imageDataText);
 
-                  // データから直接PDF生成
-                  const printData = JSON.parse(imageDataText);
-                  const newImageItems: ImageItem[] = printData.map(
-                    (card: { url: string; value: number }, index: number) => ({
-                      id: `json-${Date.now()}-${index}`,
-                      url: card.url,
-                      value: card.value,
-                    })
-                  );
-                  setImageItems(newImageItems);
-                  handleGeneratePDF();
-                } catch {
-                  alert(
-                    "JSONの形式が正しくありません。正しい形式で入力してください。"
-                  );
-                }
-              }}
-              className="w-full"
-              size="lg"
-            >
-              <FileText className="w-4 h-4 mr-2" />
-              PDFで表示
-            </Button>
-          </CardContent>
-        </Card>
+                      // データから直接PDF生成
+                      const printData = JSON.parse(imageDataText);
+                      const newImageItems: ImageItem[] = printData.map(
+                        (card: { url: string; value: number }, index: number) => ({
+                          id: `json-${Date.now()}-${index}`,
+                          url: card.url,
+                          value: card.value,
+                        })
+                      );
+                      setImageItems(newImageItems);
+                      handleGeneratePDF();
+                    } catch {
+                      alert(
+                        "JSONの形式が正しくありません。正しい形式で入力してください。"
+                      );
+                    }
+                  }}
+                  className="w-full"
+                  size="lg"
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  PDFで表示
+                </Button>
+              </TabsContent>
 
-        <Card className="mt-8">
-          <CardHeader>
-            <CardTitle>HARERUYAのURL読み込み</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                HARERUYAURL
-              </label>
-              <div className="space-y-2">
-                {hareruyaUrls.map((url, index) => (
-                  <div
-                    key={index}
-                    className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2"
-                  >
-                    <Input
-                      type="url"
-                      value={url}
-                      onChange={(e) => {
-                        const newUrls = [...hareruyaUrls];
-                        newUrls[index] = e.target.value;
-                        setHareruyaUrls(newUrls);
-                      }}
-                      placeholder="https://www.hareruyamtg.com/ja/deck/1013519/show/"
-                      className="flex-1 w-full"
-                      disabled={isLoading}
-                    />
-                    <div className="flex gap-2 justify-center sm:justify-start">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        onClick={() => {
-                          setHareruyaUrls((prev) => [...prev, ""]);
-                        }}
-                        disabled={isLoading}
-                        className="flex-shrink-0"
+              <TabsContent value="hareruya" className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    HARERUYA URL
+                  </label>
+                  <div className="space-y-2">
+                    {hareruyaUrls.map((url, index) => (
+                      <div
+                        key={index}
+                        className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2"
                       >
-                        <Plus className="w-4 h-4" />
-                      </Button>
-                      {hareruyaUrls.length > 1 && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon"
-                          onClick={() => {
-                            setHareruyaUrls((prev) =>
-                              prev.filter((_, i) => i !== index)
-                            );
+                        <Input
+                          type="url"
+                          value={url}
+                          onChange={(e) => {
+                            const newUrls = [...hareruyaUrls];
+                            newUrls[index] = e.target.value;
+                            setHareruyaUrls(newUrls);
                           }}
+                          placeholder="https://www.hareruyamtg.com/ja/deck/1013519/show/"
+                          className="flex-1 w-full"
                           disabled={isLoading}
-                          className="text-red-600 hover:text-red-700 flex-shrink-0"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="text-sm text-gray-600">
-              <p className="font-medium mb-2">使用例:</p>
-              <p className="text-xs break-all">
-                https://www.hareruyamtg.com/ja/deck/1013519/show/
-              </p>
-              <p className="text-xs">
-                HARERUYAのデッキリストページURLを入力してください
-              </p>
-              <p className="text-xs text-orange-600 mt-1">
-                ※ データ取得には数秒かかる場合があります
-              </p>
-            </div>
-
-            {isLoading && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div className="flex items-center gap-3">
-                  <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
-                  <div>
-                    <p className="text-sm font-medium text-blue-800">
-                      データ取得中
-                    </p>
-                    <p className="text-xs text-blue-600">{loadingMessage}</p>
+                        />
+                        <div className="flex gap-2 justify-center sm:justify-start">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={() => {
+                              setHareruyaUrls((prev) => [...prev, ""]);
+                            }}
+                            disabled={isLoading}
+                            className="flex-shrink-0"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </Button>
+                          {hareruyaUrls.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              onClick={() => {
+                                setHareruyaUrls((prev) =>
+                                  prev.filter((_, i) => i !== index)
+                                );
+                              }}
+                              disabled={isLoading}
+                              className="text-red-600 hover:text-red-700 flex-shrink-0"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              </div>
-            )}
 
-            {errorMessage && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <p className="text-sm font-medium text-red-800">
-                  エラーが発生しました
-                </p>
-                <p className="text-xs text-red-600 mt-1">{errorMessage}</p>
-              </div>
-            )}
+                <div className="text-sm text-gray-600">
+                  <p className="font-medium mb-2">使用例:</p>
+                  <p className="text-xs break-all">
+                    https://www.hareruyamtg.com/ja/deck/1013519/show/
+                  </p>
+                  <p className="text-xs">
+                    HARERUYAのデッキリストページURLを入力してください
+                  </p>
+                  <p className="text-xs text-orange-600 mt-1">
+                    ※ データ取得には数秒かかる場合があります
+                  </p>
+                </div>
 
-            <Button
-              onClick={handleHareruyaUrlLoad}
-              className="w-full"
-              size="lg"
-              disabled={hareruyaUrls.every((url) => !url.trim()) || isLoading}
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  データ取得中...
-                </>
-              ) : (
-                "URLから読み込み"
-              )}
-            </Button>
+                {isLoading && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-center gap-3">
+                      <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+                      <div>
+                        <p className="text-sm font-medium text-blue-800">
+                          データ取得中
+                        </p>
+                        <p className="text-xs text-blue-600">{loadingMessage}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {errorMessage && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <p className="text-sm font-medium text-red-800">
+                      エラーが発生しました
+                    </p>
+                    <p className="text-xs text-red-600 mt-1">{errorMessage}</p>
+                  </div>
+                )}
+
+                <Button
+                  onClick={handleHareruyaUrlLoad}
+                  className="w-full"
+                  size="lg"
+                  disabled={hareruyaUrls.every((url) => !url.trim()) || isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      データ取得中...
+                    </>
+                  ) : (
+                    "URLから読み込み"
+                  )}
+                </Button>
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
 
@@ -721,5 +929,18 @@ export default function HomePage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="text-center">
+        <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+        <p>読み込み中...</p>
+      </div>
+    </div>}>
+      <HomePageContent />
+    </Suspense>
   );
 }
