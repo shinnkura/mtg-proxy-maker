@@ -583,29 +583,35 @@ export default function HomePage() {
         onPdfGenerate={handleGeneratePDF}
         isPdfDisabled={imageItems.filter((item) => item.url.trim() !== "").length === 0}
       />
-      <div className="p-4 md:p-8 pt-6">
-      <div className="max-w-4xl mx-auto">
+      <div className="p-3 sm:p-4 md:p-8 pt-4 sm:pt-6">
+      <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6 md:space-y-8">
         <Card>
           <CardHeader>
             <CardTitle>データ入力</CardTitle>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="hareruya" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="hareruya">HARERUYA URL読み込み</TabsTrigger>
-                <TabsTrigger value="json">JSONデータ入力</TabsTrigger>
+            <Tabs defaultValue="hareruya" className="w-full space-y-4">
+              <TabsList className="grid w-full grid-cols-2 h-auto p-1">
+                <TabsTrigger value="hareruya" className="text-xs sm:text-sm px-1 sm:px-3">
+                  <span className="hidden sm:inline">HARERUYA URL読み込み</span>
+                  <span className="sm:hidden">HARERUYA</span>
+                </TabsTrigger>
+                <TabsTrigger value="json" className="text-xs sm:text-sm px-1 sm:px-3">
+                  <span className="hidden sm:inline">JSONデータ入力</span>
+                  <span className="sm:hidden">JSON</span>
+                </TabsTrigger>
               </TabsList>
               
               <TabsContent value="hareruya" className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
                     HARERUYA URL
                   </label>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {hareruyaUrls.map((url, index) => (
                       <div
                         key={index}
-                        className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2"
+                        className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3"
                       >
                         <Input
                           type="url"
@@ -616,10 +622,10 @@ export default function HomePage() {
                             setHareruyaUrls(newUrls);
                           }}
                           placeholder="https://www.hareruyamtg.com/ja/deck/1013519/show/"
-                          className="flex-1 w-full"
+                          className="flex-1 w-full text-sm"
                           disabled={isLoading}
                         />
-                        <div className="flex gap-2 justify-center sm:justify-start">
+                        <div className="flex gap-2 justify-center sm:justify-start flex-shrink-0">
                           <Button
                             type="button"
                             variant="outline"
@@ -628,7 +634,7 @@ export default function HomePage() {
                               setHareruyaUrls((prev) => [...prev, ""]);
                             }}
                             disabled={isLoading}
-                            className="flex-shrink-0"
+                            className="h-9 w-9"
                           >
                             <Plus className="w-4 h-4" />
                           </Button>
@@ -643,7 +649,7 @@ export default function HomePage() {
                                 );
                               }}
                               disabled={isLoading}
-                              className="text-red-600 hover:text-red-700 flex-shrink-0"
+                              className="text-red-600 hover:text-red-700 h-9 w-9"
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>
@@ -654,9 +660,9 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                <div className="text-sm text-gray-600">
+                <div className="text-xs sm:text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
                   <p className="font-medium mb-2">使用例:</p>
-                  <p className="text-xs break-all">
+                  <p className="text-xs break-all font-mono bg-white px-2 py-1 rounded border">
                     https://www.hareruyamtg.com/ja/deck/1013519/show/
                   </p>
                   <p className="text-xs">
@@ -711,7 +717,7 @@ export default function HomePage() {
                 <div>
                   <label
                     htmlFor="imageData"
-                    className="block text-sm font-medium text-gray-700 mb-2"
+                    className="block text-sm font-medium text-gray-700 mb-3"
                   >
                     画像データ（JSON形式）
                   </label>
@@ -719,14 +725,14 @@ export default function HomePage() {
                     id="imageData"
                     value={imageDataText}
                     onChange={(e) => setImageDataText(e.target.value)}
-                    className="w-full h-48 md:h-64 p-3 border border-gray-300 rounded-md font-mono text-sm"
+                    className="w-full h-40 sm:h-48 md:h-64 p-3 border border-gray-300 rounded-md font-mono text-xs sm:text-sm resize-none"
                     placeholder="画像データをJSON形式で入力してください"
                   />
                 </div>
 
-                <div className="text-sm text-gray-600">
+                <div className="text-xs sm:text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
                   <p className="font-medium mb-2">入力形式例:</p>
-                  <pre className="bg-gray-50 p-2 rounded text-xs overflow-x-auto">
+                  <pre className="bg-white p-3 rounded border text-xs overflow-x-auto">
                     {`[
   { "url": "画像URL", "value": 表示回数 },
   { "url": "画像URL", "value": 表示回数 }
@@ -768,7 +774,7 @@ export default function HomePage() {
           </CardContent>
         </Card>
 
-        <Card className="mt-8">
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Eye className="w-6 h-6" />
@@ -776,12 +782,12 @@ export default function HomePage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {imageItems.map((item, index) => (
-                <div key={item.id} className="border rounded-lg p-4 bg-white">
-                  <div className="flex flex-col md:flex-row items-start gap-4">
+                <div key={item.id} className="border rounded-lg p-3 sm:p-4 bg-white">
+                  <div className="flex flex-col lg:flex-row items-start gap-3 sm:gap-4">
                     {/* プレビュー画像 */}
-                    <div className="w-full md:w-32 h-44 border rounded-lg overflow-hidden bg-gray-50 flex-shrink-0">
+                    <div className="w-full sm:w-40 lg:w-32 h-32 sm:h-44 border rounded-lg overflow-hidden bg-gray-50 flex-shrink-0 mx-auto lg:mx-0">
                       {item.url ? (
                         <img
                           src={item.url || "/placeholder.svg"}
@@ -795,14 +801,14 @@ export default function HomePage() {
                           }}
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
+                        <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs sm:text-sm">
                           No Image
                         </div>
                       )}
                     </div>
 
                     {/* 編集フィールド */}
-                    <div className="flex-1 space-y-4 w-full">
+                    <div className="flex-1 space-y-3 sm:space-y-4 w-full">
                       <div>
                         <Label htmlFor={`url-${item.id}`}>画像URL</Label>
                         <Input
@@ -813,13 +819,13 @@ export default function HomePage() {
                             updateCardUrl(item.id, e.target.value)
                           }
                           placeholder="https://example.com/image.jpg"
-                          className="mt-1 w-full"
+                          className="mt-1 w-full text-sm"
                         />
                       </div>
 
                       <div>
                         <Label htmlFor={`value-${item.id}`}>表示回数</Label>
-                        <div className="flex items-center gap-2 mt-1 justify-center md:justify-start">
+                        <div className="flex items-center gap-2 mt-1 justify-center lg:justify-start">
                           <Button
                             type="button"
                             variant="outline"
@@ -843,7 +849,7 @@ export default function HomePage() {
                                 Number.parseInt(e.target.value) || 1
                               )
                             }
-                            className="w-16 text-center"
+                            className="w-16 text-center text-sm"
                           />
                           <Button
                             type="button"
@@ -861,12 +867,12 @@ export default function HomePage() {
                     </div>
 
                     {/* 削除ボタン */}
-                    <div className="flex justify-center md:justify-start">
+                    <div className="flex justify-center lg:justify-start w-full lg:w-auto">
                       <Button
                         variant="outline"
                         size="icon"
                         onClick={() => removeCard(item.id)}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50 flex-shrink-0 h-8 w-8"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -879,7 +885,7 @@ export default function HomePage() {
               <Button
                 onClick={addNewCard}
                 variant="outline"
-                className="w-full border-dashed border-2 h-16 text-gray-600 hover:text-gray-700 hover:bg-gray-50"
+                className="w-full border-dashed border-2 h-12 sm:h-16 text-gray-600 hover:text-gray-700 hover:bg-gray-50 text-sm sm:text-base"
               >
                 <Plus className="w-5 h-5 mr-2" />
                 新しいカードを追加
@@ -887,11 +893,11 @@ export default function HomePage() {
             </div>
 
             {/* UI管理からのPDFボタン */}
-            <div className="text-center mt-6 pt-6 border-t space-y-4">
+            <div className="text-center mt-4 sm:mt-6 pt-4 sm:pt-6 border-t space-y-3 sm:space-y-4">
               <Button
                 onClick={handleGeneratePDF}
                 size="lg"
-                className="px-8 py-3"
+                className="px-6 sm:px-8 py-2 sm:py-3 w-full sm:w-auto"
                 disabled={
                   imageItems.filter((item) => item.url.trim() !== "").length ===
                   0
@@ -902,7 +908,7 @@ export default function HomePage() {
               </Button>
               {imageItems.filter((item) => item.url.trim() !== "").length ===
                 0 && (
-                <p className="text-sm text-gray-500 mt-2">
+                <p className="text-xs sm:text-sm text-gray-500 mt-2">
                   少なくとも1つのカードにURLを設定してください
                 </p>
               )}
@@ -923,14 +929,14 @@ export default function HomePage() {
           >
             <button
               onClick={closeImageModal}
-              className="absolute top-2 right-2 text-white bg-black bg-opacity-50 rounded-full w-8 h-8 flex items-center justify-center hover:bg-opacity-75 transition-colors z-10"
+              className="absolute top-2 right-2 text-white bg-black bg-opacity-50 rounded-full w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center hover:bg-opacity-75 transition-colors z-10 text-lg sm:text-xl"
             >
               ×
             </button>
             <img
               src={modalImage || "/placeholder.svg"}
               alt="拡大表示"
-              className="max-w-full max-h-full object-contain rounded-lg"
+              className="max-w-full max-h-[90vh] object-contain rounded-lg"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.src =

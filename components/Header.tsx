@@ -64,44 +64,45 @@ export default function Header({ onPdfGenerate, isPdfDisabled = false }: HeaderP
 
   return (
     <header className="sticky top-0 z-40 bg-white shadow-sm border-b border-gray-200 backdrop-blur-sm bg-white/95">
-      <div className="max-w-4xl mx-auto px-4 md:px-8 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+      <div className="max-w-4xl mx-auto px-3 sm:px-4 md:px-8 py-3 sm:py-4">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
             <div 
-              className={`bg-gradient-to-br ${selectedIcon.color} p-2 rounded-lg cursor-pointer hover:scale-105 transition-transform`}
+              className={`bg-gradient-to-br ${selectedIcon.color} p-1.5 sm:p-2 rounded-lg cursor-pointer hover:scale-105 transition-transform flex-shrink-0`}
               onClick={() => setShowIconSelector(!showIconSelector)}
               title="アイコンを変更"
             >
-              <SelectedIconComponent className="w-6 h-6 text-white" />
+              <SelectedIconComponent className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
             </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">
+            <div className="min-w-0 flex-1">
+              <h1 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 truncate">
                 MTG プロキシメーカー
               </h1>
-              <p className="text-sm text-gray-600">
+              <p className="text-xs sm:text-sm text-gray-600 hidden sm:block">
                 Magic: The Gathering カード印刷ツール
               </p>
             </div>
           </div>
           
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <Button
               onClick={onPdfGenerate}
               disabled={isPdfDisabled}
-              size="sm"
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              size="sm" 
+              className="bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm px-2 sm:px-3"
             >
-              <FileImage className="w-4 h-4 mr-2" />
-              PDFで表示
+              <FileImage className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+              <span className="hidden sm:inline">PDFで表示</span>
+              <span className="sm:hidden">PDF</span>
             </Button>
           </div>
         </div>
 
         {/* アイコン選択パネル */}
         {showIconSelector && (
-          <div className="mt-4 p-4 bg-gray-50 rounded-lg border">
-            <h3 className="text-sm font-medium text-gray-700 mb-3">アイコンを選択:</h3>
-            <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-2">
+          <div className="mt-3 sm:mt-4 p-3 sm:p-4 bg-gray-50 rounded-lg border">
+            <h3 className="text-xs sm:text-sm font-medium text-gray-700 mb-2 sm:mb-3">アイコンを選択:</h3>
+            <div className="grid grid-cols-8 sm:grid-cols-10 md:grid-cols-12 lg:grid-cols-14 xl:grid-cols-16 gap-1.5 sm:gap-2">
               {iconOptions.map((option, index) => {
                 const IconComponent = option.icon;
                 return (
@@ -111,21 +112,21 @@ export default function Header({ onPdfGenerate, isPdfDisabled = false }: HeaderP
                       setSelectedIcon(option);
                       setShowIconSelector(false);
                     }}
-                    className={`p-2 rounded-lg transition-all hover:scale-110 ${
+                    className={`p-1.5 sm:p-2 rounded-lg transition-all hover:scale-110 ${
                       selectedIcon.name === option.name 
-                        ? 'ring-2 ring-blue-500 ring-offset-2' 
+                        ? 'ring-1 sm:ring-2 ring-blue-500 ring-offset-1 sm:ring-offset-2' 
                         : 'hover:bg-white hover:shadow-md'
                     }`}
                     title={option.name}
                   >
-                    <div className={`bg-gradient-to-br ${option.color} p-1.5 rounded`}>
-                      <IconComponent className="w-4 h-4 text-white" />
+                    <div className={`bg-gradient-to-br ${option.color} p-1 sm:p-1.5 rounded`}>
+                      <IconComponent className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                     </div>
                   </button>
                 );
               })}
             </div>
-            <div className="mt-3 flex justify-between items-center">
+            <div className="mt-2 sm:mt-3 flex justify-between items-center">
               <p className="text-xs text-gray-500">
                 現在選択中: {selectedIcon.name}
               </p>
