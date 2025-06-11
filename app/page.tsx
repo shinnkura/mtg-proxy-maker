@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -577,7 +578,12 @@ export default function HomePage() {
   }, [modalImage]);
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4 md:p-8">
+    <div className="min-h-screen bg-gray-100 pt-0">
+      <Header 
+        onPdfGenerate={handleGeneratePDF}
+        isPdfDisabled={imageItems.filter((item) => item.url.trim() !== "").length === 0}
+      />
+      <div className="p-4 md:p-8 pt-6">
       <div className="max-w-4xl mx-auto">
         <Card>
           <CardHeader>
@@ -903,6 +909,7 @@ export default function HomePage() {
             </div>
           </CardContent>
         </Card>
+      </div>
       </div>
       {/* 画像モーダル */}
       {modalImage && (
