@@ -10,12 +10,9 @@ interface CardData {
   value: number;
 }
 
-interface PageParams {
-  sessionId: string;
-}
 export default function PDFViewPage() {
-  const params = useParams() as PageParams;
-  const sessionId = params.sessionId;
+  const params = useParams();
+  const sessionId = params.sessionId as string;
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState({ current: 0, total: 0, message: "" });
