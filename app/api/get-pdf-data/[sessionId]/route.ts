@@ -19,7 +19,7 @@ export async function GET(
     }
 
     // セッションデータを取得
-    const sessions = global.pdfSessions || new Map();
+    const sessions = globalThis.pdfSessions || new Map();
     const sessionData = sessions.get(sessionId);
 
     if (!sessionData) {

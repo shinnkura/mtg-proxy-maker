@@ -16,8 +16,8 @@ export async function POST(request: NextRequest) {
     
     // カードデータを一時的に保存（実際のアプリケーションではRedisやデータベースを使用）
     // ここでは簡単のためにメモリに保存（本番環境では適切な永続化が必要）
-    global.pdfSessions = global.pdfSessions || new Map();
-    global.pdfSessions.set(sessionId, {
+    globalThis.pdfSessions = globalThis.pdfSessions || new Map();
+    globalThis.pdfSessions.set(sessionId, {
       cardData,
       createdAt: Date.now(),
       expiresAt: Date.now() + 24 * 60 * 60 * 1000, // 24時間後に期限切れ
