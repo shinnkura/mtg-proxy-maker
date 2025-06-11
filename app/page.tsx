@@ -636,7 +636,7 @@ export default function HomePage() {
       document.removeEventListener("keydown", handleEscKey);
       document.body.style.overflow = "unset";
     };
-  }, [modalImage]);
+  }, [modalImage, showQrModal]);
 
   return (
     <div className="min-h-screen bg-gray-100 pt-0">

@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { useState, useEffect } from "react";
-import { Loader2, AlertCircle, FileText } from "lucide-react";
+import { AlertCircle, FileText } from "lucide-react";
 import jsPDF from "jspdf";
 
 interface CardData {
@@ -15,7 +15,6 @@ export default function PDFViewPage() {
   const sessionId = params.sessionId as string;
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [cardData, setCardData] = useState<CardData[]>([]);
   const [progress, setProgress] = useState({ current: 0, total: 0, message: "" });
 
   useEffect(() => {
@@ -28,7 +27,6 @@ export default function PDFViewPage() {
         }
 
         const data = await response.json();
-        setCardData(data.cardData);
         
         // データ取得後、自動的にPDF生成を開始
         await generatePDF(data.cardData);
