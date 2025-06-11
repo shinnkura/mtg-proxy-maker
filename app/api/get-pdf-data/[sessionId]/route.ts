@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 
+interface RouteParams {
+  params: Promise<{ sessionId: string }>;
+}
+
 export async function GET(
   request: NextRequest,
-  { params }: { params: { sessionId: string } }
+  context: RouteParams
 ) {
   try {
-    const { sessionId } = params;
+    const { sessionId } = await context.params;
 
     if (!sessionId) {
       return NextResponse.json(
