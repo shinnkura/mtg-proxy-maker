@@ -7,8 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trash2, Plus, Eye, Loader2, FileText } from "lucide-react";
+import { Trash2, Plus, Eye, Loader2, FileText, QrCode } from "lucide-react";
 import jsPDF from "jspdf";
+import QRCode from "qrcode";
 
 interface ImageItem {
   id: string;
@@ -57,6 +58,9 @@ export default function HomePage() {
   const [loadingMessage, setLoadingMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [modalImage, setModalImage] = useState<string | null>(null);
+  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [isGeneratingQr, setIsGeneratingQr] = useState(false);
 
   const openImageModal = (imageUrl: string) => {
     setModalImage(imageUrl);
@@ -559,14 +563,71 @@ export default function HomePage() {
     }
   };
 
+  const handleGenerateQRCode = async () => {
+    const printData = imageItems
+      .filter((item) => item.url.trim() !== "")
+      .map((item) => ({
+        url: item.url,
+        value: item.value,
+      }));
+
+    if (printData.length === 0) {
+      alert("QRコードに含めるカードがありません");
+      return;
+    }
+
+    setIsGeneratingQr(true);
+
+    try {
+      // PDF URLを生成
+      const response = await fetch("/api/generate-pdf-url", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ cardData: printData }),
+      });
+
+      if (!response.ok) {
+        throw new Error("PDF URLの生成に失敗しました");
+      }
+
+      const data = await response.json();
+      
+      // QRコードを生成
+      const qrCodeDataUrl = await QRCode.toDataURL(data.pdfUrl, {
+        width: 300,
+        margin: 2,
+        color: {
+          dark: "#000000",
+          light: "#FFFFFF",
+        },
+      });
+
+      setQrCodeUrl(qrCodeDataUrl);
+      setShowQrModal(true);
+    } catch (error) {
+      console.error("QR code generation error:", error);
+      alert(`QRコードの生成に失敗しました: ${error instanceof Error ? error.message : "不明なエラー"}`);
+    } finally {
+      setIsGeneratingQr(false);
+    }
+  };
+
+  const closeQrModal = () => {
+    setShowQrModal(false);
+    setQrCodeUrl(null);
+  };
+
   useEffect(() => {
     const handleEscKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         closeImageModal();
+        closeQrModal();
       }
     };
 
-    if (modalImage) {
+    if (modalImage || showQrModal) {
       document.addEventListener("keydown", handleEscKey);
       document.body.style.overflow = "hidden";
     }
@@ -906,6 +967,27 @@ export default function HomePage() {
                 <FileText className="w-4 h-4 mr-2" />
                 PDFで表示
               </Button>
+              <Button
+                onClick={handleGenerateQRCode}
+                size="lg"
+                variant="outline"
+                className="px-6 sm:px-8 py-2 sm:py-3 w-full sm:w-auto border-blue-600 text-blue-600 hover:bg-blue-50"
+                disabled={
+                  imageItems.filter((item) => item.url.trim() !== "").length === 0 || isGeneratingQr
+                }
+              >
+                {isGeneratingQr ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    QRコード生成中...
+                  </>
+                ) : (
+                  <>
+                    <QrCode className="w-4 h-4 mr-2" />
+                    QRコード作成
+                  </>
+                )}
+              </Button>
               {imageItems.filter((item) => item.url.trim() !== "").length ===
                 0 && (
                 <p className="text-xs sm:text-sm text-gray-500 mt-2">
@@ -943,6 +1025,67 @@ export default function HomePage() {
                   "/placeholder.svg?height=400&width=300&text=画像が見つかりません";
               }}
             />
+          </div>
+        </div>
+      )}
+      
+      {/* QRコードモーダル */}
+      {showQrModal && qrCodeUrl && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
+          onClick={closeQrModal}
+        >
+          <div
+            className="relative bg-white rounded-lg p-6 max-w-sm w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={closeQrModal}
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+            >
+              ×
+            </button>
+            
+            <div className="text-center">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">
+                QRコード
+              </h3>
+              
+              <div className="mb-4">
+                <img
+                  src={qrCodeUrl}
+                  alt="QR Code"
+                  className="mx-auto border rounded-lg"
+                />
+              </div>
+              
+              <p className="text-sm text-gray-600 mb-4">
+                スマートフォンでこのQRコードを読み取ると、PDFが表示されます
+              </p>
+              
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => {
+                    const link = document.createElement("a");
+                    link.download = "mtg-proxy-qr.png";
+                    link.href = qrCodeUrl;
+                    link.click();
+                  }}
+                  size="sm"
+                  variant="outline"
+                  className="flex-1"
+                >
+                  QRコード保存
+                </Button>
+                <Button
+                  onClick={closeQrModal}
+                  size="sm"
+                  className="flex-1"
+                >
+                  閉じる
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       )}
