@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { useState, useEffect } from "react";
-import { AlertCircle, FileText, Download, Smartphone } from "lucide-react";
+import { AlertCircle, FileText, Download } from "lucide-react";
 import dynamic from "next/dynamic";
 
 // jsPDFを動的インポート
@@ -67,9 +67,9 @@ export default function PDFViewPage() {
     if (sessionId) {
       fetchCardData();
     }
-  }, [sessionId]);
+  }, [sessionId, generatePDF]);
 
-  const generatePDF = async (printData: CardData[]) => {
+  const generatePDF = useCallback(async (printData: CardData[]) => {
     if (isGenerating) return; // 重複実行を防ぐ
     
     try {
@@ -273,7 +273,7 @@ export default function PDFViewPage() {
     } finally {
       setIsGenerating(false);
     }
-  };
+  }, [isGenerating, isMobile]);
 
   const handleDownloadPDF = () => {
     if (pdfBlob) {
