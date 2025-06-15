@@ -33,19 +33,32 @@ export default function PDFViewPage() {
       try {
         setProgress({ current: 0, total: 0, message: "データを取得中..." });
         
+        console.log("Fetching card data for session:", sessionId);
+        
         const response = await fetch(`/api/get-pdf-data/${sessionId}`);
         
         if (!response.ok) {
+          const errorText = await response.text();
+          console.error("Failed to fetch card data:", response.status, errorText);
+          
+          let errorData;
+          try {
+            errorData = JSON.parse(errorText);
+          } catch {
+            errorData = { error: errorText };
+          }
+          
           if (response.status === 404) {
-            throw new Error("セッションが見つかりません。QRコードの有効期限が切れている可能性があります。");
+            throw new Error(errorData.error || "セッションが見つかりません。QRコードの有効期限が切れている可能性があります。");
           } else if (response.status === 410) {
-            throw new Error("セッションの有効期限が切れています。");
+            throw new Error(errorData.error || "セッションの有効期限が切れています。");
           } else {
-            throw new Error("データの取得に失敗しました。");
+            throw new Error(errorData.error || "データの取得に失敗しました。");
           }
         }
 
         const data = await response.json();
+        console.log("Card data fetched successfully:", data);
         
         if (!data.success || !data.cardData) {
           throw new Error("無効なデータです。");

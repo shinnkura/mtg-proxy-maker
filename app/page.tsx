@@ -581,6 +581,8 @@ export default function HomePage() {
     setIsGeneratingQr(true);
 
     try {
+      console.log("Generating QR code for cards:", printData.length);
+      
       // PDF URLを生成
       const response = await fetch("/api/generate-pdf-url", {
         method: "POST",
@@ -591,10 +593,19 @@ export default function HomePage() {
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error("PDF URL generation failed:", response.status, errorText);
         throw new Error("PDF URLの生成に失敗しました");
       }
 
       const data = await response.json();
+      
+      if (!data.success || !data.pdfUrl) {
+        console.error("Invalid response from PDF URL generation:", data);
+        throw new Error("無効なレスポンスです");
+      }
+      
+      console.log("PDF URL generated successfully:", data.pdfUrl);
       
       // QRCodeを動的に読み込み
       const QRCodeModule = await import("qrcode");
@@ -611,11 +622,13 @@ export default function HomePage() {
         },
       });
 
+      console.log("QR code generated successfully");
       setQrCodeUrl(qrCodeDataUrl);
       setShowQrModal(true);
     } catch (error) {
       console.error("QR code generation error:", error);
-      alert(`QRコードの生成に失敗しました: ${error instanceof Error ? error.message : "不明なエラー"}`);
+      const errorMessage = error instanceof Error ? error.message : "不明なエラー";
+      alert(`QRコードの生成に失敗しました: ${errorMessage}\n\nしばらく時間をおいて再度お試しください。`);
     } finally {
       setIsGeneratingQr(false);
     }
