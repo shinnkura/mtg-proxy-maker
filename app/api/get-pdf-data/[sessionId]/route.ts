@@ -60,11 +60,10 @@ export async function GET(
       cardData: sessionData.cardData,
     });
   } catch (error) {
-    console.error(`Error getting PDF data for session ${sessionId}:`, error);
+    console.error("Error getting PDF data:", error);
     return NextResponse.json(
       { 
         error: "PDFデータの取得に失敗しました。しばらく時間をおいて再度お試しください。",
-        sessionId 
       },
       { status: 500 }
     );
