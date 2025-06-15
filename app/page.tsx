@@ -595,10 +595,20 @@ export default function HomePage() {
       if (!response.ok) {
         const errorText = await response.text();
         console.error("PDF URL generation failed:", response.status, errorText);
-        throw new Error("PDF URLの生成に失敗しました");
+        
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { error: errorText };
+        }
+        
+        throw new Error(errorData.error || "PDF URLの生成に失敗しました");
       }
 
       const data = await response.json();
+      
+      console.log("PDF URL generation response:", data);
       
       if (!data.success || !data.pdfUrl) {
         console.error("Invalid response from PDF URL generation:", data);
@@ -606,6 +616,11 @@ export default function HomePage() {
       }
       
       console.log("PDF URL generated successfully:", data.pdfUrl);
+      
+      // デバッグ情報をコンソールに出力
+      if (data.debug) {
+        console.log("Debug info:", data.debug);
+      }
       
       // QRCodeを動的に読み込み
       const QRCodeModule = await import("qrcode");
@@ -628,7 +643,7 @@ export default function HomePage() {
     } catch (error) {
       console.error("QR code generation error:", error);
       const errorMessage = error instanceof Error ? error.message : "不明なエラー";
-      alert(`QRコードの生成に失敗しました: ${errorMessage}\n\nしばらく時間をおいて再度お試しください。`);
+      alert(`QRコードの生成に失敗しました: ${errorMessage}\n\n以下をお試しください:\n1. ページを再読み込みしてから再度実行\n2. しばらく時間をおいて再度お試し\n3. ブラウザのキャッシュをクリア`);
     } finally {
       setIsGeneratingQr(false);
     }
