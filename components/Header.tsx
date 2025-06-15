@@ -1,6 +1,7 @@
 import { Car as Card, Gamepad2, Sparkles, Zap, Crown, Shield, Sword, Star, Diamond, Gem, Trophy, Target, Flame, Bolt, Wand2, Hexagon, Circle, Square, Triangle, Heart, Spade, Club, FileImage, Image, Printer, Download, Upload, Settings, Palette, Brush, Layers, Grid3x3, Layout, Book, BookOpen, Scroll, Archive, Package, Box, Cuboid as Cube, Dice1, Dice2, Dice3, Dice4, Dice5, Dice6 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { QrCode, Loader2 } from "lucide-react";
 
 const iconOptions = [
   { name: "Card (現在)", icon: Card, color: "from-blue-600 to-purple-600" },
@@ -54,9 +55,16 @@ const iconOptions = [
 interface HeaderProps {
   onPdfGenerate?: () => void;
   isPdfDisabled?: boolean;
+  onQrGenerate?: () => void;
+  isQrGenerating?: boolean;
 }
 
-export default function Header({ onPdfGenerate, isPdfDisabled = false }: HeaderProps) {
+export default function Header({ 
+  onPdfGenerate, 
+  isPdfDisabled = false, 
+  onQrGenerate, 
+  isQrGenerating = false 
+}: HeaderProps) {
   const [selectedIcon, setSelectedIcon] = useState(iconOptions[0]);
   const [showIconSelector, setShowIconSelector] = useState(false);
 
@@ -94,6 +102,25 @@ export default function Header({ onPdfGenerate, isPdfDisabled = false }: HeaderP
               <FileImage className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
               <span className="hidden sm:inline">PDFで表示</span>
               <span className="sm:hidden">PDF</span>
+            </Button>
+            <Button
+              onClick={onQrGenerate}
+              disabled={isPdfDisabled || isQrGenerating}
+              size="sm"
+              variant="outline"
+              className="border-blue-600 text-blue-600 hover:bg-blue-50 text-xs sm:text-sm px-2 sm:px-3"
+            >
+              {isQrGenerating ? (
+                <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin sm:mr-2" />
+              ) : (
+                <QrCode className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+              )}
+              <span className="hidden sm:inline">
+                {isQrGenerating ? "生成中..." : "QRコード"}
+              </span>
+              <span className="sm:hidden">
+                {isQrGenerating ? "..." : "QR"}
+              </span>
             </Button>
           </div>
         </div>

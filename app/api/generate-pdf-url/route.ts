@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     }
 
     // デバッグ用ログ
-    console.log(`Session created: ${sessionId}, Cards: ${printData.length}`);
+    console.log(`Session created: ${sessionId}, Cards: ${cardData.length}`);
 
     // セッションデータの保存確認
     const sessions = globalThis.pdfSessions || new Map();

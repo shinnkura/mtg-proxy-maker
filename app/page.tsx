@@ -663,6 +663,8 @@ export default function HomePage() {
       <Header 
         onPdfGenerate={handleGeneratePDF}
         isPdfDisabled={imageItems.filter((item) => item.url.trim() !== "").length === 0}
+        onQrGenerate={handleGenerateQRCode}
+        isQrGenerating={isGeneratingQr}
       />
       <div className="p-3 sm:p-4 md:p-8 pt-4 sm:pt-6">
       <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6 md:space-y-8">
