@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Trash2, Plus, Eye, Loader2, FileText, QrCode } from "lucide-react";
 
-
 interface ImageItem {
   id: string;
   url: string;
@@ -368,7 +367,8 @@ export default function HomePage() {
 
     try {
       // jsPDFを動的に読み込み
-      const PDF = await jsPDF;
+      const jsPDFModule = await import("jspdf");
+      const PDF = jsPDFModule.default;
       
       /* ③ ここから先は非同期で画像読込 & PDF 生成 */
       // プリントページと同じロジックでカードを展開
@@ -405,7 +405,7 @@ export default function HomePage() {
       }
 
       // PDF設定 - A4サイズ
-      const pdf = new PDF.default({
+      const pdf = new PDF({
         orientation: "portrait",
         unit: "mm",
         format: "a4",
@@ -597,10 +597,11 @@ export default function HomePage() {
       const data = await response.json();
       
       // QRCodeを動的に読み込み
-      const QR = await QRCode;
+      const QRCodeModule = await import("qrcode");
+      const QR = QRCodeModule.default;
       
       // QRコードを生成
-      const qrCodeDataUrl = await QR.default.toDataURL(data.pdfUrl, {
+      const qrCodeDataUrl = await QR.toDataURL(data.pdfUrl, {
         width: 400,
         margin: 2,
         errorCorrectionLevel: 'M',

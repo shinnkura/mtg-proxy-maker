@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { AlertCircle, FileText, Download } from "lucide-react";
 
 interface CardData {
@@ -63,9 +63,9 @@ export default function PDFViewPage() {
     if (sessionId) {
       fetchCardData();
     }
-  }, [sessionId, generatePDF]);
+  }, [sessionId]);
 
-  const generatePDF = useCallback(async (printData: CardData[]) => {
+  const generatePDF = async (printData: CardData[]) => {
     if (isGenerating) return; // 重複実行を防ぐ
     
     try {
@@ -77,7 +77,7 @@ export default function PDFViewPage() {
       }
 
       // jsPDFを動的に読み込み
-      const PDF = await jsPDF;
+      const { default: jsPDF } = await import("jspdf");
 
       // カードを展開
       const expandedCards: string[] = [];
@@ -112,7 +112,7 @@ export default function PDFViewPage() {
       }
 
       // PDF設定
-      const pdf = new PDF.default({
+      const pdf = new jsPDF({
         orientation: "portrait",
         unit: "mm",
         format: "a4",
@@ -269,7 +269,7 @@ export default function PDFViewPage() {
     } finally {
       setIsGenerating(false);
     }
-  }, [isGenerating, isMobile]);
+  };
 
   const handleDownloadPDF = () => {
     if (pdfBlob) {
