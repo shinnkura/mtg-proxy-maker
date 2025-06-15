@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,8 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Trash2, Plus, Eye, Loader2, FileText, QrCode } from "lucide-react";
-import jsPDF from "jspdf";
-import QRCode from "qrcode";
+
+// クライアントサイドでのみ読み込み
+const jsPDF = dynamic(() => import("jspdf"), { ssr: false });
+const QRCode = dynamic(() => import("qrcode"), { ssr: false });
 
 interface ImageItem {
   id: string;
@@ -368,6 +371,9 @@ export default function HomePage() {
     console.log("ローディング画面表示完了");
 
     try {
+      // jsPDFを動的に読み込み
+      const PDF = await jsPDF;
+      
       /* ③ ここから先は非同期で画像読込 & PDF 生成 */
       // プリントページと同じロジックでカードを展開
       const expandedCards: string[] = [];
@@ -403,7 +409,7 @@ export default function HomePage() {
       }
 
       // PDF設定 - A4サイズ
-      const pdf = new jsPDF({
+      const pdf = new PDF.default({
         orientation: "portrait",
         unit: "mm",
         format: "a4",
@@ -594,10 +600,14 @@ export default function HomePage() {
 
       const data = await response.json();
       
+      // QRCodeを動的に読み込み
+      const QR = await QRCode;
+      
       // QRコードを生成
-      const qrCodeDataUrl = await QRCode.toDataURL(data.pdfUrl, {
-        width: 300,
+      const qrCodeDataUrl = await QR.default.toDataURL(data.pdfUrl, {
+        width: 400,
         margin: 2,
+        errorCorrectionLevel: 'M',
         color: {
           dark: "#000000",
           light: "#FFFFFF",
@@ -1036,7 +1046,7 @@ export default function HomePage() {
           onClick={closeQrModal}
         >
           <div
-            className="relative bg-white rounded-lg p-6 max-w-sm w-full"
+            className="relative bg-white rounded-lg p-6 max-w-md w-full"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -1048,7 +1058,7 @@ export default function HomePage() {
             
             <div className="text-center">
               <h3 className="text-lg font-bold text-gray-900 mb-4">
-                QRコード
+                📱 QRコード
               </h3>
               
               <div className="mb-4">
@@ -1059,9 +1069,18 @@ export default function HomePage() {
                 />
               </div>
               
-              <p className="text-sm text-gray-600 mb-4">
-                スマートフォンでこのQRコードを読み取ると、PDFが表示されます
-              </p>
+              <div className="text-sm text-gray-600 mb-4 space-y-2">
+                <p className="font-medium">📱 スマートフォンでの使用方法:</p>
+                <ol className="text-left space-y-1 text-xs">
+                  <li>1. カメラアプリでQRコードを読み取り</li>
+                  <li>2. 表示されたリンクをタップ</li>
+                  <li>3. PDFが自動でダウンロードされます</li>
+                  <li>4. ファイルアプリで確認してください</li>
+                </ol>
+                <p className="text-xs text-orange-600 mt-2">
+                  ※ QRコードは7日間有効です
+                </p>
+              </div>
               
               <div className="flex gap-2">
                 <Button

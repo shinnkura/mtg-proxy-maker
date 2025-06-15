@@ -2,8 +2,11 @@
 
 import { useParams } from "next/navigation";
 import { useState, useEffect } from "react";
-import { AlertCircle, FileText } from "lucide-react";
-import jsPDF from "jspdf";
+import { AlertCircle, FileText, Download, Smartphone } from "lucide-react";
+import dynamic from "next/dynamic";
+
+// jsPDFを動的インポート
+const jsPDF = dynamic(() => import("jspdf"), { ssr: false });
 
 interface CardData {
   url: string;
@@ -16,17 +19,41 @@ export default function PDFViewPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState({ current: 0, total: 0, message: "" });
+  const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
+    // モバイル判定
+    const checkMobile = () => {
+      const userAgent = navigator.userAgent || navigator.vendor;
+      const isMobileDevice = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
+      setIsMobile(isMobileDevice);
+    };
+    
+    checkMobile();
+    
     const fetchCardData = async () => {
       try {
+        setProgress({ current: 0, total: 0, message: "データを取得中..." });
+        
         const response = await fetch(`/api/get-pdf-data/${sessionId}`);
         
         if (!response.ok) {
-          throw new Error("セッションが見つからないか、期限切れです");
+          if (response.status === 404) {
+            throw new Error("セッションが見つかりません。QRコードの有効期限が切れている可能性があります。");
+          } else if (response.status === 410) {
+            throw new Error("セッションの有効期限が切れています。");
+          } else {
+            throw new Error("データの取得に失敗しました。");
+          }
         }
 
         const data = await response.json();
+        
+        if (!data.success || !data.cardData) {
+          throw new Error("無効なデータです。");
+        }
         
         // データ取得後、自動的にPDF生成を開始
         await generatePDF(data.cardData);
@@ -43,12 +70,18 @@ export default function PDFViewPage() {
   }, [sessionId]);
 
   const generatePDF = async (printData: CardData[]) => {
+    if (isGenerating) return; // 重複実行を防ぐ
+    
     try {
+      setIsGenerating(true);
       setProgress({ current: 0, total: 0, message: "PDF生成を準備中..." });
 
       if (printData.length === 0) {
         throw new Error("PDFに出力するカードがありません");
       }
+
+      // jsPDFを動的に読み込み
+      const PDF = await jsPDF;
 
       // カードを展開
       const expandedCards: string[] = [];
@@ -83,7 +116,7 @@ export default function PDFViewPage() {
       }
 
       // PDF設定
-      const pdf = new jsPDF({
+      const pdf = new PDF.default({
         orientation: "portrait",
         unit: "mm",
         format: "a4",
@@ -199,24 +232,66 @@ export default function PDFViewPage() {
         message: "PDFを生成中..."
       });
 
-      // PDFを表示
+      // PDFを生成
       const pdfBlob = pdf.output("blob");
+      setPdfBlob(pdfBlob);
+      
+      // 自動でPDFを表示/ダウンロード
       const pdfUrl = URL.createObjectURL(pdfBlob);
       
-      // 新しいタブでPDFを開く
-      window.open(pdfUrl, "_blank");
+      if (isMobile) {
+        // モバイルの場合はダウンロード
+        const link = document.createElement('a');
+        link.href = pdfUrl;
+        link.download = `mtg-proxy-cards-${new Date().getTime()}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        setProgress({
+          current: totalImages,
+          total: totalImages,
+          message: "PDFダウンロード完了！"
+        });
+      } else {
+        // デスクトップの場合は新しいタブで開く
+        window.open(pdfUrl, "_blank");
+        
+        setProgress({
+          current: totalImages,
+          total: totalImages,
+          message: "PDF表示完了！"
+        });
+      }
       
       setIsLoading(false);
-      setProgress({
-        current: totalImages,
-        total: totalImages,
-        message: "PDF生成完了！"
-      });
 
     } catch (error) {
       console.error("PDF generation error:", error);
       setError(`PDFの生成に失敗しました: ${error instanceof Error ? error.message : "不明なエラー"}`);
       setIsLoading(false);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleDownloadPDF = () => {
+    if (pdfBlob) {
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = pdfUrl;
+      link.download = `mtg-proxy-cards-${new Date().getTime()}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(pdfUrl);
+    }
+  };
+
+  const handleViewPDF = () => {
+    if (pdfBlob) {
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      window.open(pdfUrl, "_blank");
     }
   };
 
@@ -227,12 +302,20 @@ export default function PDFViewPage() {
           <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
           <h1 className="text-xl font-bold text-gray-900 mb-2">エラーが発生しました</h1>
           <p className="text-gray-600 mb-4">{error}</p>
-          <button
-            onClick={() => window.close()}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
-          >
-            閉じる
-          </button>
+          <div className="space-y-2">
+            <button
+              onClick={() => window.history.back()}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg w-full transition-colors"
+            >
+              戻る
+            </button>
+            <button
+              onClick={() => window.close()}
+              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg w-full transition-colors"
+            >
+              閉じる
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -241,7 +324,9 @@ export default function PDFViewPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center p-4">
       <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 max-w-md w-full text-center border border-white/20">
-        <div className="text-6xl mb-6">🃏</div>
+        <div className="text-6xl mb-6">
+          {isMobile ? "📱" : "🃏"}
+        </div>
         
         {isLoading ? (
           <div className="animate-spin w-16 h-16 border-4 border-white/30 border-t-white rounded-full mx-auto mb-6"></div>
@@ -250,11 +335,17 @@ export default function PDFViewPage() {
         )}
         
         <h1 className="text-2xl font-bold text-white mb-4">
-          {isLoading ? "PDF生成中" : "PDF生成完了"}
+          {isLoading ? "PDF生成中" : (isMobile ? "PDF準備完了" : "PDF生成完了")}
         </h1>
         
         <p className="text-white/90 mb-6">
-          {progress.message || "カード画像を処理しています..."}
+          {isLoading 
+            ? (progress.message || "カード画像を処理しています...")
+            : (isMobile 
+                ? "PDFファイルがダウンロードされました。ファイルアプリで確認してください。"
+                : "PDFが新しいタブで開かれました。"
+              )
+          }
         </p>
         
         {progress.total > 0 && (
@@ -272,9 +363,49 @@ export default function PDFViewPage() {
         )}
         
         {!isLoading && (
-          <p className="text-white/80 text-sm">
-            PDFが新しいタブで開かれました
-          </p>
+          <div className="space-y-3">
+            {isMobile ? (
+              <div className="space-y-2">
+                <button
+                  onClick={handleDownloadPDF}
+                  className="w-full bg-white/20 hover:bg-white/30 text-white px-4 py-3 rounded-lg transition-colors flex items-center justify-center gap-2"
+                  disabled={!pdfBlob}
+                >
+                  <Download className="w-5 h-5" />
+                  PDFを再ダウンロード
+                </button>
+                <p className="text-white/70 text-xs">
+                  ダウンロードフォルダまたはファイルアプリで確認してください
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <button
+                  onClick={handleViewPDF}
+                  className="w-full bg-white/20 hover:bg-white/30 text-white px-4 py-3 rounded-lg transition-colors flex items-center justify-center gap-2"
+                  disabled={!pdfBlob}
+                >
+                  <FileText className="w-5 h-5" />
+                  PDFを再表示
+                </button>
+                <button
+                  onClick={handleDownloadPDF}
+                  className="w-full bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
+                  disabled={!pdfBlob}
+                >
+                  <Download className="w-4 h-4" />
+                  PDFをダウンロード
+                </button>
+              </div>
+            )}
+            
+            <button
+              onClick={() => window.history.back()}
+              className="w-full bg-transparent border border-white/30 hover:bg-white/10 text-white px-4 py-2 rounded-lg transition-colors text-sm"
+            >
+              元のページに戻る
+            </button>
+          </div>
         )}
       </div>
     </div>

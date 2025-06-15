@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     globalThis.pdfSessions.set(sessionId, {
       cardData,
       createdAt: Date.now(),
-      expiresAt: Date.now() + 24 * 60 * 60 * 1000, // 24時間後に期限切れ
+      expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7日間有効（モバイル対応のため延長）
     });
 
     // セッションIDを含むURLを生成
