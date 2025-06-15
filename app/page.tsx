@@ -60,6 +60,30 @@ export default function HomePage() {
   const [showQrModal, setShowQrModal] = useState(false);
   const [isGeneratingQr, setIsGeneratingQr] = useState(false);
 
+  // カード枚数の計算
+  const calculateCardStats = () => {
+    const validCards = imageItems.filter((item) => item.url.trim() !== "");
+    const totalCards = validCards.reduce((sum, item) => sum + item.value, 0);
+    const cardsPerPage = 9;
+    const fullPages = Math.floor(totalCards / cardsPerPage);
+    const remainder = totalCards % cardsPerPage;
+    const cardsNeededForPerfect = remainder === 0 ? 0 : cardsPerPage - remainder;
+    const totalPages = fullPages + (remainder > 0 ? 1 : 0);
+    const printingCost = totalPages * 50; // コンビニカラー印刷料金: 1枚50円
+    
+    return {
+      totalCards,
+      fullPages,
+      remainder,
+      cardsNeededForPerfect,
+      totalPages,
+      printingCost,
+      hasCards: validCards.length > 0
+    };
+  };
+
+  const cardStats = calculateCardStats();
+
   const openImageModal = (imageUrl: string) => {
     setModalImage(imageUrl);
   };
@@ -677,9 +701,10 @@ export default function HomePage() {
     <div className="min-h-screen bg-gray-100 pt-0">
       <Header 
         onPdfGenerate={handleGeneratePDF}
-        isPdfDisabled={imageItems.filter((item) => item.url.trim() !== "").length === 0}
+        isPdfDisabled={!cardStats.hasCards}
         onQrGenerate={handleGenerateQRCode}
         isQrGenerating={isGeneratingQr}
+        cardStats={cardStats}
       />
       <div className="p-3 sm:p-4 md:p-8 pt-4 sm:pt-6">
       <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6 md:space-y-8">
@@ -878,6 +903,44 @@ export default function HomePage() {
               <Eye className="w-6 h-6" />
               カードプレビュー・編集
             </CardTitle>
+            {/* ヘッダー内の印刷情報 */}
+            {cardStats.hasCards && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm mt-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span className="font-medium text-blue-800">印刷情報</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-blue-700">
+                  <div>
+                    <span className="font-medium">総カード枚数:</span> {cardStats.totalCards}枚
+                  </div>
+                  <div>
+                    <span className="font-medium">印刷ページ数:</span> {cardStats.totalPages}ページ
+                  </div>
+                  <div>
+                    <span className="font-medium">印刷料金:</span> 
+                    <span className="font-bold text-blue-800 ml-1">¥{cardStats.printingCost.toLocaleString()}</span>
+                  </div>
+                </div>
+                {cardStats.remainder > 0 && (
+                  <div className="mt-2 p-2 bg-blue-100 rounded border-l-4 border-blue-400">
+                    <p className="font-medium text-blue-800 text-xs">
+                      最後のページ: {cardStats.remainder}枚 / 9枚 
+                      <span className="ml-2 text-blue-600">
+                        💡 あと<span className="font-bold">{cardStats.cardsNeededForPerfect}枚</span>追加でぴったり
+                      </span>
+                    </p>
+                  </div>
+                )}
+                {cardStats.remainder === 0 && cardStats.totalCards > 0 && (
+                  <div className="mt-2 p-2 bg-green-100 rounded border-l-4 border-green-400">
+                    <p className="text-green-700 text-xs">
+                      ✅ すべてのページがぴったり9枚で印刷されます
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
           </CardHeader>
           <CardContent>
             <div className="space-y-4 sm:space-y-6">
@@ -992,13 +1055,60 @@ export default function HomePage() {
 
             {/* UI管理からのPDFボタン */}
             <div className="text-center mt-4 sm:mt-6 pt-4 sm:pt-6 border-t space-y-3 sm:space-y-4">
+              {/* カード枚数情報 */}
+              {cardStats.hasCards && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span className="font-medium text-blue-800">印刷情報</span>
+                  </div>
+                  <div className="space-y-1 text-blue-700">
+                    <p>
+                      <span className="font-medium">総カード枚数:</span> {cardStats.totalCards}枚
+                    </p>
+                    <p>
+                      <span className="font-medium">印刷ページ数:</span> {cardStats.fullPages + (cardStats.remainder > 0 ? 1 : 0)}ページ
+                      {cardStats.fullPages > 0 && (
+                        <span className="text-xs ml-1">
+                          ({cardStats.fullPages}ページ満杯 + {cardStats.remainder > 0 ? '1ページ部分的' : '0ページ部分的'})
+                        </span>
+                      )}
+                    </p>
+                    <p>
+                      <span className="font-medium">印刷料金:</span> 
+                      <span className="text-lg font-bold text-blue-800 ml-1">¥{cardStats.printingCost.toLocaleString()}</span>
+                      <span className="text-xs ml-1">(コンビニカラー印刷: ¥50/枚)</span>
+                    </p>
+                    {cardStats.remainder > 0 && (
+                      <div className="mt-2 p-2 bg-blue-100 rounded border-l-4 border-blue-400">
+                        <p className="font-medium text-blue-800">
+                          最後のページ: {cardStats.remainder}枚 / 9枚
+                        </p>
+                        <p className="text-blue-600 text-xs mt-1">
+                          💡 あと<span className="font-bold text-blue-800">{cardStats.cardsNeededForPerfect}枚</span>追加でぴったり印刷できます
+                        </p>
+                        <p className="text-orange-600 text-xs mt-1">
+                          💰 追加すると料金は変わりません（同じページ数のため）
+                        </p>
+                      </div>
+                    )}
+                    {cardStats.remainder === 0 && cardStats.totalCards > 0 && (
+                      <div className="mt-2 p-2 bg-green-100 rounded border-l-4 border-green-400">
+                        <p className="text-green-700 text-xs">
+                          ✅ すべてのページがぴったり9枚で印刷されます
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              
               <Button
                 onClick={handleGeneratePDF}
                 size="lg"
                 className="px-6 sm:px-8 py-2 sm:py-3 w-full sm:w-auto"
                 disabled={
-                  imageItems.filter((item) => item.url.trim() !== "").length ===
-                  0
+                  !cardStats.hasCards
                 }
               >
                 <FileText className="w-4 h-4 mr-2" />
@@ -1010,7 +1120,7 @@ export default function HomePage() {
                 variant="outline"
                 className="px-6 sm:px-8 py-2 sm:py-3 w-full sm:w-auto border-blue-600 text-blue-600 hover:bg-blue-50"
                 disabled={
-                  imageItems.filter((item) => item.url.trim() !== "").length === 0 || isGeneratingQr
+                  !cardStats.hasCards || isGeneratingQr
                 }
               >
                 {isGeneratingQr ? (
@@ -1025,8 +1135,7 @@ export default function HomePage() {
                   </>
                 )}
               </Button>
-              {imageItems.filter((item) => item.url.trim() !== "").length ===
-                0 && (
+              {!cardStats.hasCards && (
                 <p className="text-xs sm:text-sm text-gray-500 mt-2">
                   少なくとも1つのカードにURLを設定してください
                 </p>

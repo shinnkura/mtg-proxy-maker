@@ -57,13 +57,23 @@ interface HeaderProps {
   isPdfDisabled?: boolean;
   onQrGenerate?: () => void;
   isQrGenerating?: boolean;
+  cardStats?: {
+    totalCards: number;
+    fullPages: number;
+    remainder: number;
+    cardsNeededForPerfect: number;
+    totalPages: number;
+    printingCost: number;
+    hasCards: boolean;
+  };
 }
 
 export default function Header({ 
   onPdfGenerate, 
   isPdfDisabled = false, 
   onQrGenerate, 
-  isQrGenerating = false 
+  isQrGenerating = false,
+  cardStats
 }: HeaderProps) {
   const [selectedIcon, setSelectedIcon] = useState(iconOptions[0]);
   const [showIconSelector, setShowIconSelector] = useState(false);
@@ -93,6 +103,24 @@ export default function Header({
           </div>
           
           <div className="flex items-center gap-2 flex-shrink-0">
+            {/* カード枚数表示（ヘッダー用簡易版） */}
+            {cardStats?.hasCards && (
+              <div className="hidden lg:flex items-center gap-2 text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
+                <div className="flex items-center gap-1">
+                  <span>{cardStats.totalCards}枚</span>
+                  <span className="text-gray-400">|</span>
+                  <span>{cardStats.totalPages}ページ</span>
+                  <span className="text-gray-400">|</span>
+                  <span className="font-medium text-blue-600">¥{cardStats.printingCost}</span>
+                </div>
+                {cardStats.remainder > 0 && (
+                  <span className="text-orange-600 text-xs">
+                    (+{cardStats.cardsNeededForPerfect}でぴったり)
+                  </span>
+                )}
+              </div>
+            )}
+            
             <Button
               onClick={onPdfGenerate}
               disabled={isPdfDisabled}
