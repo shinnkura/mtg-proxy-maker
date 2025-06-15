@@ -1,12 +1,8 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { AlertCircle, FileText, Download } from "lucide-react";
-import dynamic from "next/dynamic";
-
-// jsPDFを動的インポート
-const jsPDF = dynamic(() => import("jspdf"), { ssr: false });
 
 interface CardData {
   url: string;

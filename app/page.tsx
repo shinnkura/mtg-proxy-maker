@@ -10,9 +10,6 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Trash2, Plus, Eye, Loader2, FileText, QrCode } from "lucide-react";
 
-// クライアントサイドでのみ読み込み
-const jsPDF = dynamic(() => import("jspdf"), { ssr: false });
-const QRCode = dynamic(() => import("qrcode"), { ssr: false });
 
 interface ImageItem {
   id: string;
