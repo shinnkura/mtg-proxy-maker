@@ -313,12 +313,6 @@ export default function PDFViewPage() {
           <p className="text-gray-600 mb-4">{error}</p>
           <div className="space-y-2">
             <button
-              onClick={() => window.history.back()}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg w-full transition-colors"
-            >
-              戻る
-            </button>
-            <button
               onClick={() => window.close()}
               className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg w-full transition-colors"
             >
@@ -407,13 +401,6 @@ export default function PDFViewPage() {
                 </button>
               </div>
             )}
-            
-            <button
-              onClick={() => window.history.back()}
-              className="w-full bg-transparent border border-white/30 hover:bg-white/10 text-white px-4 py-2 rounded-lg transition-colors text-sm"
-            >
-              元のページに戻る
-            </button>
           </div>
         )}
       </div>
