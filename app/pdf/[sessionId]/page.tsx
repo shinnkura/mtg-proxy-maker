@@ -381,7 +381,7 @@ export default function PDFViewPage() {
                   disabled={!pdfBlob}
                 >
                   <Download className="w-5 h-5" />
-                  PDFを再ダウンロード
+                  PDFを表示
                 </button>
                 <p className="text-white/70 text-xs">
                   ダウンロードフォルダまたはファイルアプリで確認してください
