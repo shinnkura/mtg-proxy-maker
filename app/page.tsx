@@ -132,6 +132,10 @@ export default function HomePage() {
       return;
     }
 
+    await handleUrlLoad(validUrls, "hareruya");
+  };
+
+  const handleUrlLoad = async (validUrls: string[], type: string) => {
     setIsLoading(true);
     setLoadingMessage("リクエスト送信中...");
     setErrorMessage("");
@@ -145,7 +149,8 @@ export default function HomePage() {
           `${i + 1}/${validUrls.length} ページデータを取得中...`
         );
 
-        const response = await fetch("/api/scrape-hareruya", {
+        const apiEndpoint = type === "hareruya" ? "/api/scrape-hareruya" : "/api/scrape-goldfish";
+        const response = await fetch(apiEndpoint, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -179,7 +184,7 @@ export default function HomePage() {
 
         const newImageItems: ImageItem[] = allCards.map(
           (card: { url: string; value: number }, index: number) => ({
-            id: `hareruya-${Date.now()}-${index}`,
+            id: `${type}-${Date.now()}-${index}`,
             url: card.url,
             value: card.value,
           })
@@ -714,13 +719,17 @@ export default function HomePage() {
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="hareruya" className="w-full space-y-4">
-              <TabsList className="grid w-full grid-cols-2 h-auto p-1">
+              <TabsList className="grid w-full grid-cols-3 h-auto p-1">
                 <TabsTrigger value="hareruya" className="text-xs sm:text-sm px-1 sm:px-3">
-                  <span className="hidden sm:inline">HARERUYA URL読み込み</span>
+                  <span className="hidden sm:inline">HARERUYA</span>
                   <span className="sm:hidden">HARERUYA</span>
                 </TabsTrigger>
+                <TabsTrigger value="goldfish" className="text-xs sm:text-sm px-1 sm:px-3">
+                  <span className="hidden sm:inline">Goldfish</span>
+                  <span className="sm:hidden">Goldfish</span>
+                </TabsTrigger>
                 <TabsTrigger value="json" className="text-xs sm:text-sm px-1 sm:px-3">
-                  <span className="hidden sm:inline">JSONデータ入力</span>
+                  <span className="hidden sm:inline">JSON</span>
                   <span className="sm:hidden">JSON</span>
                 </TabsTrigger>
               </TabsList>
@@ -821,6 +830,117 @@ export default function HomePage() {
 
                 <Button
                   onClick={handleHareruyaUrlLoad}
+                  className="w-full"
+                  size="lg"
+                  disabled={hareruyaUrls.every((url) => !url.trim()) || isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      データ取得中...
+                    </>
+                  ) : (
+                    "URLから読み込み"
+                  )}
+                </Button>
+              </TabsContent>
+              
+              <TabsContent value="goldfish" className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    MTG Goldfish URL
+                  </label>
+                  <div className="space-y-3">
+                    {hareruyaUrls.map((url, index) => (
+                      <div
+                        key={index}
+                        className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3"
+                      >
+                        <Input
+                          type="url"
+                          value={url}
+                          onChange={(e) => {
+                            const newUrls = [...hareruyaUrls];
+                            newUrls[index] = e.target.value;
+                            setHareruyaUrls(newUrls);
+                          }}
+                          placeholder="https://www.mtggoldfish.com/deck/visual/7185245"
+                          className="flex-1 w-full text-sm"
+                          disabled={isLoading}
+                        />
+                        <div className="flex gap-2 justify-center sm:justify-start flex-shrink-0">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={() => {
+                              setHareruyaUrls((prev) => [...prev, ""]);
+                            }}
+                            disabled={isLoading}
+                            className="h-9 w-9"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </Button>
+                          {hareruyaUrls.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              onClick={() => {
+                                setHareruyaUrls((prev) =>
+                                  prev.filter((_, i) => i !== index)
+                                );
+                              }}
+                              disabled={isLoading}
+                              className="text-red-600 hover:text-red-700 h-9 w-9"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="text-xs sm:text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+                  <p className="font-medium mb-2">使用例:</p>
+                  <p className="text-xs break-all font-mono bg-white px-2 py-1 rounded border">
+                    https://www.mtggoldfish.com/deck/visual/7185245
+                  </p>
+                  <p className="text-xs">
+                    MTG GoldfishのDeck VisualページのURLを入力してください
+                  </p>
+                  <p className="text-xs text-orange-600 mt-1">
+                    ※ データ取得には数秒かかる場合があります
+                  </p>
+                </div>
+
+                {isLoading && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-center gap-3">
+                      <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+                      <div>
+                        <p className="text-sm font-medium text-blue-800">
+                          データ取得中
+                        </p>
+                        <p className="text-xs text-blue-600">{loadingMessage}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {errorMessage && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <p className="text-sm font-medium text-red-800">
+                      エラーが発生しました
+                    </p>
+                    <p className="text-xs text-red-600 mt-1">{errorMessage}</p>
+                  </div>
+                )}
+
+                <Button
+                  onClick={() => handleUrlLoad(hareruyaUrls.filter(url => url.trim() && url.includes("mtggoldfish.com")), "goldfish")}
                   className="w-full"
                   size="lg"
                   disabled={hareruyaUrls.every((url) => !url.trim()) || isLoading}
