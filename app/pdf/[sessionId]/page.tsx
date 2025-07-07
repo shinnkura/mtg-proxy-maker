@@ -19,65 +19,6 @@ export default function PDFViewPage() {
   const [isMobile, setIsMobile] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  useEffect(() => {
-    // モバイル判定
-    const checkMobile = () => {
-      const userAgent = navigator.userAgent || navigator.vendor;
-      const isMobileDevice = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
-      setIsMobile(isMobileDevice);
-    };
-    
-    checkMobile();
-    
-    const fetchCardData = async () => {
-      try {
-        setProgress({ current: 0, total: 0, message: "データを取得中..." });
-        
-        console.log("Fetching card data for session:", sessionId);
-        
-        const response = await fetch(`/api/get-pdf-data/${sessionId}`);
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error("Failed to fetch card data:", response.status, errorText);
-          
-          let errorData;
-          try {
-            errorData = JSON.parse(errorText);
-          } catch {
-            errorData = { error: errorText };
-          }
-          
-          if (response.status === 404) {
-            throw new Error(errorData.error || "セッションが見つかりません。QRコードの有効期限が切れている可能性があります。");
-          } else if (response.status === 410) {
-            throw new Error(errorData.error || "セッションの有効期限が切れています。");
-          } else {
-            throw new Error(errorData.error || "データの取得に失敗しました。");
-          }
-        }
-
-        const data = await response.json();
-        console.log("Card data fetched successfully:", data);
-        
-        if (!data.success || !data.cardData) {
-          throw new Error("無効なデータです。");
-        }
-        
-        // データ取得後、自動的にPDF生成を開始
-        await generatePDF(data.cardData);
-      } catch (error) {
-        console.error("Error fetching card data:", error);
-        setError(error instanceof Error ? error.message : "データの取得に失敗しました");
-        setIsLoading(false);
-      }
-    };
-
-    if (sessionId) {
-      fetchCardData();
-    }
-  }, [sessionId, generatePDF]);
-
   const generatePDF = async (printData: CardData[]) => {
     if (isGenerating) return; // 重複実行を防ぐ
     
@@ -283,6 +224,65 @@ export default function PDFViewPage() {
       setIsGenerating(false);
     }
   };
+
+  useEffect(() => {
+    // モバイル判定
+    const checkMobile = () => {
+      const userAgent = navigator.userAgent || navigator.vendor;
+      const isMobileDevice = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
+      setIsMobile(isMobileDevice);
+    };
+    
+    checkMobile();
+    
+    const fetchCardData = async () => {
+      try {
+        setProgress({ current: 0, total: 0, message: "データを取得中..." });
+        
+        console.log("Fetching card data for session:", sessionId);
+        
+        const response = await fetch(`/api/get-pdf-data/${sessionId}`);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("Failed to fetch card data:", response.status, errorText);
+          
+          let errorData;
+          try {
+            errorData = JSON.parse(errorText);
+          } catch {
+            errorData = { error: errorText };
+          }
+          
+          if (response.status === 404) {
+            throw new Error(errorData.error || "セッションが見つかりません。QRコードの有効期限が切れている可能性があります。");
+          } else if (response.status === 410) {
+            throw new Error(errorData.error || "セッションの有効期限が切れています。");
+          } else {
+            throw new Error(errorData.error || "データの取得に失敗しました。");
+          }
+        }
+
+        const data = await response.json();
+        console.log("Card data fetched successfully:", data);
+        
+        if (!data.success || !data.cardData) {
+          throw new Error("無効なデータです。");
+        }
+        
+        // データ取得後、自動的にPDF生成を開始
+        await generatePDF(data.cardData);
+      } catch (error) {
+        console.error("Error fetching card data:", error);
+        setError(error instanceof Error ? error.message : "データの取得に失敗しました");
+        setIsLoading(false);
+      }
+    };
+
+    if (sessionId) {
+      fetchCardData();
+    }
+  }, [sessionId]);
 
   const handleDownloadPDF = () => {
     if (pdfBlob) {
