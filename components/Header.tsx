@@ -1,7 +1,10 @@
+'use client'
+
 import { Car as Card, Gamepad2, Sparkles, Zap, Crown, Shield, Sword, Star, Diamond, Gem, Trophy, Target, Flame, Bolt, Wand2, Hexagon, Circle, Square, Triangle, Heart, Spade, Club, FileImage, Image, Printer, Download, Upload, Settings, Palette, Brush, Layers, Grid3x3, Layout, Book, BookOpen, Scroll, Archive, Package, Box, Cuboid as Cube, Dice1, Dice2, Dice3, Dice4, Dice5, Dice6 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { QrCode, Loader2 } from "lucide-react";
+import UserMenu from "@/components/UserMenu";
 
 const iconOptions = [
   { name: "Card (現在)", icon: Card, color: "from-blue-600 to-purple-600" },
@@ -57,6 +60,7 @@ interface HeaderProps {
   isPdfDisabled?: boolean;
   onQrGenerate?: () => void;
   isQrGenerating?: boolean;
+  onLoginClick?: () => void;
   cardStats?: {
     totalCards: number;
     fullPages: number;
@@ -73,6 +77,7 @@ export default function Header({
   isPdfDisabled = false, 
   onQrGenerate, 
   isQrGenerating = false,
+  onLoginClick = () => {},
   cardStats
 }: HeaderProps) {
   const [selectedIcon, setSelectedIcon] = useState(iconOptions[0]);
@@ -131,6 +136,9 @@ export default function Header({
               <span className="hidden sm:inline">PDFで表示</span>
               <span className="sm:hidden">PDF</span>
             </Button>
+            
+            <UserMenu onLoginClick={onLoginClick} />
+            
             <Button
               onClick={onQrGenerate}
               disabled={isPdfDisabled || isQrGenerating}

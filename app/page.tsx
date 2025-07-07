@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Header from "@/components/Header";
+import LoginModal from "@/components/LoginModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -59,6 +60,7 @@ export default function HomePage() {
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
   const [showQrModal, setShowQrModal] = useState(false);
   const [isGeneratingQr, setIsGeneratingQr] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
   const [isCopying, setIsCopying] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
 
@@ -760,6 +762,7 @@ export default function HomePage() {
         isPdfDisabled={!cardStats.hasCards}
         onQrGenerate={handleGenerateQRCode}
         isQrGenerating={isGeneratingQr}
+        onLoginClick={() => setShowLoginModal(true)}
         cardStats={cardStats}
       />
       <div className="p-3 sm:p-4 md:p-8 pt-4 sm:pt-6">
@@ -1502,6 +1505,12 @@ export default function HomePage() {
           </div>
         </div>
       )}
+      
+      {/* ログインモーダル */}
+      <LoginModal 
+        isOpen={showLoginModal} 
+        onClose={() => setShowLoginModal(false)} 
+      />
     </div>
   );
 }
