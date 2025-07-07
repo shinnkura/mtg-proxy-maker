@@ -7,8 +7,8 @@ import createClient from '@/lib/supabase-client'
 interface AuthContextType {
   user: User | null
   loading: boolean
-  signIn: (email: string, password: string) => Promise<{ error: Error | null }>
-  signUp: (email: string, password: string) => Promise<{ error: Error | null }>
+  signIn: (email: string, password: string) => Promise<{ error: { message: string } | null }>
+  signUp: (email: string, password: string) => Promise<{ error: { message: string } | null }>
   signOut: () => Promise<void>
 }
 
@@ -46,13 +46,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email,
         password,
       })
-      return { error }
+      return { error: error ? { message: error.message } : null }
     } catch (err) {
       // コンソールエラーを抑制し、適切なエラーオブジェクトを返す
       return { 
-        error: { 
+        error: {
           message: err instanceof Error ? err.message : 'ログインに失敗しました' 
-        } 
+        }
       }
     }
   }
@@ -68,13 +68,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           captchaToken: undefined,
         }
       })
-      return { error }
+      return { error: error ? { message: error.message } : null }
     } catch (err) {
       // コンソールエラーを抑制し、適切なエラーオブジェクトを返す
       return { 
-        error: { 
+        error: {
           message: err instanceof Error ? err.message : 'アカウント作成に失敗しました' 
-        } 
+        }
       }
     }
   }

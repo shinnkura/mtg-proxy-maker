@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { AlertCircle, FileText, Download } from "lucide-react";
 
 interface CardData {
@@ -19,7 +19,7 @@ export default function PDFViewPage() {
   const [isMobile, setIsMobile] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const generatePDF = async (printData: CardData[]) => {
+  const generatePDF = useCallback(async (printData: CardData[]) => {
     if (isGenerating) return; // 重複実行を防ぐ
     
     try {
@@ -223,7 +223,7 @@ export default function PDFViewPage() {
     } finally {
       setIsGenerating(false);
     }
-  };
+  }, [isGenerating, isMobile]);
 
   useEffect(() => {
     // モバイル判定
@@ -282,7 +282,7 @@ export default function PDFViewPage() {
     if (sessionId) {
       fetchCardData();
     }
-  }, [sessionId]);
+  }, [sessionId, generatePDF]);
 
   const handleDownloadPDF = () => {
     if (pdfBlob) {
