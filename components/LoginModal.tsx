@@ -56,7 +56,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
     if (error) {
       // Supabaseのエラーコードとメッセージを詳細にチェック
       const errorMessage = error.message || ''
-      const errorCode = error.code || ''
+      const errorCode = (error as any)?.code || ''
       
       if (errorCode === 'email_not_confirmed' || errorMessage.includes('Email not confirmed') || errorMessage.includes('email_not_confirmed')) {
         setError('メールアドレスが確認されていません。登録時に送信された確認メールをご確認ください。')
@@ -104,7 +104,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
     
     if (error) {
       const errorMessage = error.message || ''
-      const errorCode = error.code || ''
+      const errorCode = (error as any)?.code || ''
       
       if (errorCode === 'user_already_exists' || errorMessage.includes('already registered') || errorMessage.includes('User already registered')) {
         setError('このメールアドレスは既に登録されています')
