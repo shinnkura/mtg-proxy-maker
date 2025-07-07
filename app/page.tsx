@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trash2, Plus, Eye, Loader2, FileText, QrCode } from "lucide-react";
+import { Trash2, Plus, Eye, Loader2, FileText, QrCode, Copy, Check } from "lucide-react";
 
 interface ImageItem {
   id: string;
@@ -59,6 +59,21 @@ export default function HomePage() {
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
   const [showQrModal, setShowQrModal] = useState(false);
   const [isGeneratingQr, setIsGeneratingQr] = useState(false);
+  const [isCopying, setIsCopying] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
+
+  // imageItemsが変更されたときにimageDataTextを自動更新
+  useEffect(() => {
+    const jsonData = imageItems
+      .filter(item => item.url.trim() !== "") // 空のURLは除外
+      .map(item => ({
+        url: item.url,
+        value: item.value
+      }));
+    
+    const formattedJson = JSON.stringify(jsonData, null, 2);
+    setImageDataText(formattedJson);
+  }, [imageItems]);
 
   // カード枚数の計算
   const calculateCardStats = () => {
@@ -678,6 +693,42 @@ export default function HomePage() {
     }
   };
 
+  const handleCopyJson = async () => {
+    try {
+      setIsCopying(true);
+      
+      // クリップボードAPIを使用してコピー
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(imageDataText);
+      } else {
+        // フォールバック: 古いブラウザ対応
+        const textArea = document.createElement("textarea");
+        textArea.value = imageDataText;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-999999px";
+        textArea.style.top = "-999999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand('copy');
+        textArea.remove();
+      }
+      
+      setCopySuccess(true);
+      
+      // 2秒後に元の状態に戻す
+      setTimeout(() => {
+        setCopySuccess(false);
+      }, 2000);
+      
+    } catch (error) {
+      console.error('コピーに失敗しました:', error);
+      alert('クリップボードへのコピーに失敗しました');
+    } finally {
+      setIsCopying(false);
+    }
+  };
+
   const closeQrModal = () => {
     setShowQrModal(false);
     setQrCodeUrl(null);
@@ -962,18 +1013,22 @@ export default function HomePage() {
                     htmlFor="imageData"
                     className="block text-sm font-medium text-gray-700 mb-3"
                   >
-                    画像データ（JSON形式）
+                    画像データ（JSON形式）- カード編集と自動同期
                   </label>
                   <textarea
                     id="imageData"
                     value={imageDataText}
                     onChange={(e) => setImageDataText(e.target.value)}
                     className="w-full h-40 sm:h-48 md:h-64 p-3 border border-gray-300 rounded-md font-mono text-xs sm:text-sm resize-none"
-                    placeholder="画像データをJSON形式で入力してください"
+                    placeholder="画像データをJSON形式で入力してください（カード編集時に自動更新されます）"
                   />
                 </div>
 
                 <div className="text-xs sm:text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+                  <p className="font-medium mb-2 text-blue-700">💡 自動同期機能:</p>
+                  <p className="text-xs mb-2 text-blue-600">
+                    カードプレビュー・編集でカードを追加・編集・削除すると、このJSONデータも自動的に更新されます。
+                  </p>
                   <p className="font-medium mb-2">入力形式例:</p>
                   <pre className="bg-white p-3 rounded border text-xs overflow-x-auto">
                     {`[
@@ -983,14 +1038,96 @@ export default function HomePage() {
                   </pre>
                 </div>
 
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Button
+                    onClick={() => {
+                      try {
+                        const printData = JSON.parse(imageDataText);
+                        
+                        // JSONデータの妥当性をチェック
+                        if (!Array.isArray(printData)) {
+                          throw new Error("データは配列である必要があります");
+                        }
+                        
+                        // 各要素の妥当性をチェック
+                        printData.forEach((item, index) => {
+                          if (!item.url || typeof item.url !== 'string') {
+                            throw new Error(`${index + 1}番目のアイテムにurlが必要です`);
+                          }
+                          if (!item.value || typeof item.value !== 'number' || item.value < 1) {
+                            throw new Error(`${index + 1}番目のアイテムのvalueは1以上の数値である必要があります`);
+                          }
+                        });
+                        
+                        // imageItemsを更新（JSONから読み込み）
+                        const newImageItems: ImageItem[] = printData.map(
+                          (card: { url: string; value: number }, index: number) => ({
+                            id: `json-${Date.now()}-${index}`,
+                            url: card.url,
+                            value: card.value,
+                          })
+                        );
+                        setImageItems(newImageItems);
+                        
+                        // PDF生成
+                        setTimeout(() => {
+                          handleGeneratePDF();
+                        }, 100); // 状態更新を待つ
+                      } catch {
+                        alert(
+                          "JSONの形式が正しくありません。正しい形式で入力してください。\n\n期待される形式:\n[\n  { \"url\": \"画像URL\", \"value\": 表示回数 }\n]"
+                        );
+                      }
+                    }}
+                    className="flex-1"
+                    size="lg"
+                  >
+                    <FileText className="w-4 h-4 mr-2" />
+                    JSONを読み込んでPDF表示
+                  </Button>
+                  
+                  <Button
+                    onClick={handleCopyJson}
+                    variant="outline"
+                    size="lg"
+                    disabled={isCopying}
+                    className="border-green-600 text-green-600 hover:bg-green-50 sm:w-auto"
+                  >
+                    {copySuccess ? (
+                      <>
+                        <Check className="w-4 h-4 mr-2" />
+                        コピー完了
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-4 h-4 mr-2" />
+                        JSONをコピー
+                      </>
+                    )}
+                  </Button>
+                </div>
+                
                 <Button
                   onClick={() => {
                     try {
-                      // JSONの妥当性をチェック
-                      JSON.parse(imageDataText);
-
-                      // データから直接PDF生成
                       const printData = JSON.parse(imageDataText);
+                      
+                      // JSONデータの妥当性をチェック
+                      if (!Array.isArray(printData)) {
+                        throw new Error("データは配列である必要があります");
+                      }
+                      
+                      // 各要素の妥当性をチェック
+                      printData.forEach((item, index) => {
+                        if (!item.url || typeof item.url !== 'string') {
+                          throw new Error(`${index + 1}番目のアイテムにurlが必要です`);
+                        }
+                        if (!item.value || typeof item.value !== 'number' || item.value < 1) {
+                          throw new Error(`${index + 1}番目のアイテムのvalueは1以上の数値である必要があります`);
+                        }
+                      });
+                      
+                      // imageItemsを更新（JSONから読み込み）
                       const newImageItems: ImageItem[] = printData.map(
                         (card: { url: string; value: number }, index: number) => ({
                           id: `json-${Date.now()}-${index}`,
@@ -999,18 +1136,19 @@ export default function HomePage() {
                         })
                       );
                       setImageItems(newImageItems);
-                      handleGeneratePDF();
-                    } catch {
+                      
+                      alert(`${printData.length}枚のカードを読み込みました`);
+                    } catch (error) {
                       alert(
-                        "JSONの形式が正しくありません。正しい形式で入力してください。"
+                        `JSONの読み込みに失敗しました: ${error instanceof Error ? error.message : "不明なエラー"}\n\n正しい形式で入力してください。`
                       );
                     }
                   }}
+                  variant="outline"
                   className="w-full"
                   size="lg"
                 >
-                  <FileText className="w-4 h-4 mr-2" />
-                  PDFで表示
+                  JSONを読み込み
                 </Button>
               </TabsContent>
             </Tabs>
