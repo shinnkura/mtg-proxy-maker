@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useAuth } from '@/components/AuthProvider'
-import { Loader2, X, Mail, Lock, User, Eye, EyeOff } from 'lucide-react'
+import { Loader2, X, Mail, Lock, Eye, EyeOff } from 'lucide-react'
 
 interface LoginModalProps {
   isOpen: boolean

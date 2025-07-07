@@ -76,7 +76,7 @@ export default function PDFViewPage() {
     if (sessionId) {
       fetchCardData();
     }
-  }, [sessionId]);
+  }, [sessionId, generatePDF]);
 
   const generatePDF = async (printData: CardData[]) => {
     if (isGenerating) return; // 重複実行を防ぐ
